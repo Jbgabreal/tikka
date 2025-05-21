@@ -5,7 +5,7 @@ import ChatPreview from "./ChatPreview";
 
 const HeroSection = () => {
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center px-4 overflow-hidden">
+    <div className="relative min-h-screen flex flex-col items-center justify-center px-4 overflow-hidden pt-16 sm:pt-24">
       {/* Background elements */}
       <div className="absolute inset-0 bg-chatta-darker z-0">
         <div className="absolute top-1/3 left-1/4 w-64 h-64 rounded-full bg-chatta-purple/20 filter blur-3xl animate-pulse-glow"></div>
