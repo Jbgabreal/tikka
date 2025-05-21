@@ -1,6 +1,6 @@
 
 import React from "react";
-import { MessageCircle, BarChart2, Swap } from "lucide-react";
+import { MessageCircle, BarChart2, ArrowLeftRight } from "lucide-react";
 
 const HowItWorks = () => {
   const steps = [
@@ -17,7 +17,7 @@ const HowItWorks = () => {
       detail: "Get instant access to prices, trends, and on-chain activities"
     },
     {
-      icon: <Swap className="w-8 h-8 text-chatta-purple" />,
+      icon: <ArrowLeftRight className="w-8 h-8 text-chatta-purple" />,
       title: "You act",
       description: "Make informed decisions",
       detail: "Swap tokens, manage your portfolio, or explore opportunities"

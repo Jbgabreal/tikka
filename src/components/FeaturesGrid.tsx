@@ -1,6 +1,6 @@
 
 import React from "react";
-import { MessageSquare, Swap, BarChart2, Search } from "lucide-react";
+import { MessageSquare, ArrowLeftRight, BarChart2, Search } from "lucide-react";
 
 const FeaturesGrid = () => {
   const features = [
@@ -10,7 +10,7 @@ const FeaturesGrid = () => {
       description: "Chat naturally with Chatta as you would with a friend. No complex commands required."
     },
     {
-      icon: <Swap className="w-10 h-10 text-chatta-purple" />,
+      icon: <ArrowLeftRight className="w-10 h-10 text-chatta-purple" />,
       title: "Smart Token Swaps",
       description: "Instantly swap tokens through conversation. Chatta finds the best routes and rates."
     },
