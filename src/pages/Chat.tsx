@@ -124,7 +124,7 @@ const Chat = () => {
   };
 
   return (
-    <div className="min-h-screen bg-chatta-dark text-white">
+    <div className="min-h-screen bg-chatta-dark text-white flex">
       {/* Mobile Sidebar Toggle */}
       {isMobile && (
         <button 
@@ -137,32 +137,30 @@ const Chat = () => {
         </button>
       )}
       
-      <div className="flex min-h-screen">
-        {/* Sidebar */}
-        <AnimatePresence>
-          {showSidebar && (
-            <motion.div
-              initial={{ x: isMobile ? -260 : 0, opacity: isMobile ? 0 : 1 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -260, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className={cn(
-                "fixed md:relative z-40 md:z-auto", 
-                isMobile ? "inset-y-0 left-0 shadow-lg" : ""
-              )}
-            >
-              <ChatSidebar 
-                onClose={isMobile ? () => setShowSidebar(false) : undefined}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-        
-        {/* Main Chat Area */}
-        <div className={cn(
-          "flex-1 flex flex-col min-h-screen",
-          showSidebar ? "md:ml-[260px]" : ""
-        )}>
+      {/* Sidebar */}
+      <AnimatePresence>
+        {showSidebar && (
+          <motion.div
+            initial={{ x: isMobile ? -260 : 0, opacity: isMobile ? 0 : 1 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -260, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed md:relative z-40 md:z-auto h-full"
+            style={{ width: '260px' }}
+          >
+            <ChatSidebar 
+              onClose={isMobile ? () => setShowSidebar(false) : undefined}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Main Chat Area - Center content with max-width */}
+      <div className={cn(
+        "flex-1 flex flex-col min-h-screen",
+        showSidebar && !isMobile ? "ml-[260px]" : ""
+      )}>
+        <div className="flex flex-col h-full">
           {/* Header with wallet connection */}
           <div className="border-b border-chatta-purple/10 p-4 flex items-center justify-end">
             {walletConnected ? (
@@ -183,10 +181,10 @@ const Chat = () => {
           
           {/* Conditional content based on wallet connection */}
           {walletConnected ? (
-            <div className="flex-1 flex flex-col">
-              {/* Messages area */}
-              <div className="flex-1 overflow-y-auto p-4 md:p-6">
-                <div className="max-w-[720px] mx-auto w-full">
+            <div className="flex-1 flex flex-col h-full">
+              {/* Messages area with centered content */}
+              <div className="flex-1 overflow-y-auto p-4 md:p-6 flex justify-center">
+                <div className="w-full max-w-[720px]">
                   <AnimatePresence>
                     {messages.length === 0 ? (
                       <motion.div 
@@ -281,10 +279,10 @@ const Chat = () => {
                 </div>
               </div>
               
-              {/* Quick commands - only show when messages exist */}
+              {/* Quick commands - centered with max width */}
               {messages.length > 0 && (
-                <div className="px-4 pt-2">
-                  <div className="max-w-[720px] mx-auto w-full">
+                <div className="px-4 pt-2 flex justify-center">
+                  <div className="w-full max-w-[720px]">
                     <div className="flex flex-wrap gap-2">
                       {quickCommands.map((cmd) => (
                         <button
@@ -303,9 +301,9 @@ const Chat = () => {
                 </div>
               )}
               
-              {/* Input area */}
-              <div className="p-4">
-                <div className="max-w-[720px] mx-auto w-full">
+              {/* Input area - centered with max width */}
+              <div className="p-4 flex justify-center">
+                <div className="w-full max-w-[720px]">
                   <PureMultimodalInput 
                     chatId={chatId}
                     messages={messages}
