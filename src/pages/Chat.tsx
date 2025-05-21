@@ -5,7 +5,7 @@ import ChatWindow from "@/components/chat/ChatWindow";
 
 const Chat = () => {
   return (
-    <div className="min-h-screen bg-chatta-dark text-white flex">
+    <div className="min-h-screen bg-chatta-dark text-white flex w-full">
       <ChatSidebar />
       <ChatWindow />
     </div>
