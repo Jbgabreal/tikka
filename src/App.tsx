@@ -17,6 +17,9 @@ const Layout = () => {
   const location = useLocation();
   const showNavbar = !["chat", "settings"].includes(location.pathname.split("/")[1]);
   
+  console.log("App Layout rendering, current path:", location.pathname);
+  console.log("Showing navbar:", showNavbar);
+  
   return (
     <>
       {showNavbar && <Navbar />}

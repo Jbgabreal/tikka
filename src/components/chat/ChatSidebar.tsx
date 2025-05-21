@@ -19,14 +19,11 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
   useEffect(() => {
     console.log("ChatSidebar mounted");
     console.log("Current path:", path);
-    console.log("Full location object:", location);
-    console.log("Navigate function available:", !!navigate);
-    console.log("onClose function available:", !!onClose);
     
     return () => {
       console.log("ChatSidebar unmounted");
     };
-  }, [path, location, navigate, onClose]);
+  }, [path]);
   
   // Define navigation items
   const navItems = [
@@ -35,89 +32,20 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
     { icon: Settings, label: "Settings", route: "/settings", active: path === "/settings" },
   ];
 
-  // Function to handle closing sidebar
-  const handleClose = () => {
-    console.log("Sidebar close handler called");
-    if (onClose) {
-      console.log("Executing onClose function");
-      onClose();
-    }
-  };
-  
-  // Updated link click handler with explicit event parameter
-  const handleLinkClick = (route: string, e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent default Link behavior
-    e.stopPropagation(); // Stop event bubbling
-    
-    console.log(`Link clicked for route: ${route}`);
-    console.log("Current path before navigation:", path);
-    
-    // Call onClose before navigation if available
-    if (onClose) {
-      console.log("Closing sidebar before navigation");
-      onClose();
-    }
-    
-    // Use a slight delay to allow sidebar to close first
-    setTimeout(() => {
-      console.log("Navigating to:", route);
-      navigate(route);
-    }, 50);
-  };
-  
-  // Handle recent chat click
-  const handleRecentChatClick = (chatName: string, e: React.MouseEvent) => {
+  // Direct navigation function - simplified to reduce complexity
+  const navigateTo = (route: string, e: React.MouseEvent) => {
     e.preventDefault();
-    console.log(`Recent chat clicked: ${chatName}`);
+    console.log(`ChatSidebar navigating to: ${route}`);
     
-    // Call onClose if available
     if (onClose) {
-      console.log("Closing sidebar after recent chat click");
       onClose();
     }
     
-    // Navigate to the chat page
-    setTimeout(() => {
-      navigate("/chat");
-    }, 50);
-  };
-  
-  // Handle new chat button click
-  const handleNewChatClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    console.log("New Chat button clicked");
-    
-    // Call onClose if available
-    if (onClose) {
-      console.log("Closing sidebar after new chat click");
-      onClose();
-    }
-    
-    // Navigate to the chat page
-    setTimeout(() => {
-      navigate("/chat");
-    }, 50);
-  };
-  
-  // Handle logo click
-  const handleLogoClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    console.log("Logo link clicked, navigating to /");
-    
-    // Call onClose if available
-    if (onClose) {
-      console.log("Closing sidebar after logo click");
-      onClose();
-    }
-    
-    // Navigate to the home page
-    setTimeout(() => {
-      navigate("/");
-    }, 50);
+    // Navigate directly without delay
+    navigate(route);
   };
   
   console.log("Rendering ChatSidebar with path:", path);
-  console.log("onClose prop exists:", !!onClose);
   
   return (
     <div className="w-[260px] border-r border-chatta-purple/20 h-screen flex flex-col bg-gradient-to-b from-chatta-darker to-chatta-dark">
@@ -127,7 +55,7 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
           <div className="flex items-center gap-2">
             <a 
               href="/"
-              onClick={(e) => handleLogoClick(e)}
+              onClick={(e) => navigateTo('/', e)}
               className="cursor-pointer"
             >
               <img src="/lovable-uploads/4e3faff9-aeeb-4667-84fe-6c0002c1fca1.png" alt="Chatta" className="h-9" />
@@ -138,7 +66,7 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
             <button 
               onClick={() => {
                 console.log("Close button clicked");
-                handleClose();
+                onClose();
               }}
               className="text-gray-400 hover:text-white"
             >
@@ -160,7 +88,7 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
             >
               <a
                 href={item.route}
-                onClick={(e) => handleLinkClick(item.route, e)}
+                onClick={(e) => navigateTo(item.route, e)}
                 className={cn(
                   "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all cursor-pointer",
                   item.active 
@@ -187,7 +115,7 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
             <li key={index}>
               <a
                 href="/chat"
-                onClick={(e) => handleRecentChatClick(chat, e)}
+                onClick={(e) => navigateTo('/chat', e)}
                 className="text-gray-400 hover:text-white text-sm flex items-center gap-2 px-2 py-1.5 rounded hover:bg-chatta-purple/10 cursor-pointer"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-chatta-cyan"></span>
@@ -203,14 +131,12 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
         <Button 
           variant="chatta" 
           className="w-full text-sm font-medium"
-          asChild
+          onClick={(e) => {
+            e.preventDefault();
+            navigateTo('/chat', e as unknown as React.MouseEvent);
+          }}
         >
-          <a 
-            href="/chat" 
-            onClick={(e) => handleNewChatClick(e)}
-          >
-            New Chat
-          </a>
+          New Chat
         </Button>
       </div>
     </div>

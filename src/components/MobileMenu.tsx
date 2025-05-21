@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { X } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -25,42 +24,39 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, navItems }) =>
   
   const handleNavClick = (item: NavItem, event: React.MouseEvent) => {
     event.preventDefault();
-    console.log(`Mobile menu: clicked item ${item.name}`);
+    console.log(`Mobile menu: clicked item ${item.name}, url: ${item.url}`);
     
     // First close the menu
     onClose();
     
-    // Small delay to allow animation to complete
-    setTimeout(() => {
-      // Handle navigation differently based on URL type
-      if (item.url.startsWith('#')) {
-        console.log(`Mobile menu: navigating to hash ${item.url}`);
-        // If we're not on homepage and trying to navigate to a section
-        if (location.pathname !== '/') {
-          console.log('Mobile menu: navigating to home first');
-          navigate('/');
-          // Allow the navigation to complete before scrolling
-          setTimeout(() => {
-            const element = document.querySelector(item.url);
-            if (element) {
-              console.log(`Mobile menu: scrolling to element ${item.url}`);
-              element.scrollIntoView({ behavior: 'smooth' });
-            }
-          }, 100);
-        } else {
-          // Direct scroll if already on homepage
-          console.log(`Mobile menu: already on homepage, scrolling to ${item.url}`);
-          const element = document.querySelector(item.url);
-          if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
-          }
+    // For direct page navigation that's not hash-based
+    if (!item.url.startsWith('#')) {
+      console.log(`Mobile menu: direct navigation to ${item.url}`);
+      navigate(item.url);
+      return;
+    }
+    
+    // For hash navigation
+    // If we're not on homepage and trying to navigate to a section
+    if (location.pathname !== '/') {
+      console.log('Mobile menu: navigating to home first');
+      navigate('/');
+      // Allow the navigation to complete before scrolling
+      setTimeout(() => {
+        const element = document.querySelector(item.url);
+        if (element) {
+          console.log(`Mobile menu: scrolling to element ${item.url}`);
+          element.scrollIntoView({ behavior: 'smooth' });
         }
-      } else {
-        // Regular page navigation
-        console.log(`Mobile menu: navigating to ${item.url}`);
-        navigate(item.url);
+      }, 100);
+    } else {
+      // Direct scroll if already on homepage
+      console.log(`Mobile menu: already on homepage, scrolling to ${item.url}`);
+      const element = document.querySelector(item.url);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
       }
-    }, 50);
+    }
   };
   
   return (
