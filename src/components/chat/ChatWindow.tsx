@@ -61,8 +61,8 @@ const ChatWindow = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-screen">
-      <header className="border-b border-chatta-purple/10 p-4">
+    <div className="flex flex-col h-screen w-full">
+      <header className="border-b border-chatta-purple/10 p-4 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img src="/lovable-uploads/4e3faff9-aeeb-4667-84fe-6c0002c1fca1.png" alt="Chatta" className="h-8" />
@@ -74,60 +74,62 @@ const ChatWindow = () => {
         </div>
       </header>
       
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-6">
-          {messages.map(msg => (
-            <div 
-              key={msg.id}
-              className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'} gap-3`}
-            >
-              {!msg.isUser && (
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="/lovable-uploads/d2b1a35c-65a9-4cc4-b0cd-d9788572aae6.png" alt="Chatta" />
-                  <AvatarFallback className="bg-chatta-purple/20 text-chatta-purple">CH</AvatarFallback>
-                </Avatar>
-              )}
-              
+      <div className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full px-4 py-4">
+          <div className="space-y-6">
+            {messages.map(msg => (
               <div 
-                className={`max-w-[75%] flex flex-col ${msg.isUser ? 'items-end' : 'items-start'}`}
+                key={msg.id}
+                className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'} gap-3`}
               >
+                {!msg.isUser && (
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="/lovable-uploads/d2b1a35c-65a9-4cc4-b0cd-d9788572aae6.png" alt="Chatta" />
+                    <AvatarFallback className="bg-chatta-purple/20 text-chatta-purple">CH</AvatarFallback>
+                  </Avatar>
+                )}
+                
                 <div 
-                  className={`rounded-2xl px-4 py-2 ${
-                    msg.isUser 
-                      ? 'bg-white/10 text-white' 
-                      : 'bg-chatta-purple/10 border border-chatta-purple/20'
-                  }`}
+                  className={`max-w-[75%] flex flex-col ${msg.isUser ? 'items-end' : 'items-start'}`}
                 >
-                  <p>{msg.content}</p>
+                  <div 
+                    className={`rounded-2xl px-4 py-2 ${
+                      msg.isUser 
+                        ? 'bg-white/10 text-white' 
+                        : 'bg-chatta-purple/10 border border-chatta-purple/20'
+                    }`}
+                  >
+                    <p>{msg.content}</p>
+                  </div>
+                  
+                  {msg.options && (
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      {msg.options.map((option, idx) => (
+                        <Button
+                          key={idx}
+                          variant="outline"
+                          className="bg-chatta-darker border-chatta-purple/20 hover:border-chatta-purple hover:bg-chatta-purple/10 hover:glow text-sm"
+                        >
+                          {option}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 
-                {msg.options && (
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    {msg.options.map((option, idx) => (
-                      <Button
-                        key={idx}
-                        variant="outline"
-                        className="bg-chatta-darker border-chatta-purple/20 hover:border-chatta-purple hover:bg-chatta-purple/10 hover:glow text-sm"
-                      >
-                        {option}
-                      </Button>
-                    ))}
-                  </div>
+                {msg.isUser && (
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="" />
+                    <AvatarFallback className="bg-chatta-gray/20">U</AvatarFallback>
+                  </Avatar>
                 )}
               </div>
-              
-              {msg.isUser && (
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="" />
-                  <AvatarFallback className="bg-chatta-gray/20">U</AvatarFallback>
-                </Avatar>
-              )}
-            </div>
-          ))}
-        </div>
-      </ScrollArea>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
       
-      <form onSubmit={handleSubmit} className="border-t border-chatta-purple/10 p-4">
+      <form onSubmit={handleSubmit} className="border-t border-chatta-purple/10 p-4 flex-shrink-0 bg-chatta-dark">
         <div className="flex items-center gap-2">
           <Button 
             type="button" 
