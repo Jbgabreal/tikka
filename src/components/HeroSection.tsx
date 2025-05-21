@@ -15,10 +15,10 @@ const HeroSection = () => {
       <div className="container mx-auto z-10 flex flex-col lg:flex-row items-center justify-between gap-16">
         <div className="flex flex-col max-w-2xl">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
-            Your <span className="gradient-text">AI Copilot</span> for Solana
+            Your <span className="gradient-text">command line for Solana</span>, powered by AI
           </h1>
           <p className="text-xl md:text-2xl text-gray-300 mb-8">
-            Trade, track, and explore the Solana blockchain — just by chatting.
+            Swap tokens, launch projects, track sentiment, and manage portfolios all through one chat.
           </p>
           <div className="flex flex-wrap gap-4">
             <Button
