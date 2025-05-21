@@ -19,7 +19,7 @@ const Layout = () => {
   return (
     <>
       {showNavbar && <Navbar />}
-      <div className={showNavbar ? "pt-20" : ""}>
+      <div className={showNavbar ? "pt-16 sm:pt-20" : ""}>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/chat" element={<Chat />} />

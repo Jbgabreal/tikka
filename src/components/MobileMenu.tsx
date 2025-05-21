@@ -25,17 +25,17 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, navItems }) =>
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="fixed inset-0 z-50 pt-16 bg-chatta-darker bg-opacity-95 backdrop-blur-lg"
+      className="fixed inset-0 z-50 pt-16 bg-black/90 backdrop-blur-xl"
     >
       <div className="container mx-auto px-4">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white"
+          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
         >
           <X size={24} />
         </button>
         
-        <nav className="flex flex-col items-center space-y-6 pt-8">
+        <nav className="flex flex-col items-center space-y-6 pt-8 animate-fade-in">
           {navItems.map((item, i) => {
             const Icon = item.icon;
             return (
@@ -51,7 +51,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, navItems }) =>
                 <Link
                   to={item.url}
                   className={cn(
-                    "flex items-center justify-center gap-2 px-4 py-3 text-lg font-medium rounded-lg",
+                    "flex items-center justify-center gap-2 px-5 py-3 text-lg font-medium rounded-lg",
                     "text-gray-300 hover:text-white hover:bg-chatta-purple/20 transition-colors"
                   )}
                   onClick={onClose}
