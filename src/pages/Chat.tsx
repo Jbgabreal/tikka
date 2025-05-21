@@ -23,12 +23,12 @@ interface UIMessage {
   attachments?: Attachment[];
 }
 
-// Quick command options
+// Quick command options - updated to match the suggested prompts
 const quickCommands = [
-  { label: "Swap Tokens", action: "swap" },
-  { label: "Launch Token", action: "launch" },
-  { label: "Analyze Portfolio", action: "analyze" },
-  { label: "Check Market", action: "market" },
+  { label: "Swap $SOL to $BONK", action: "swap" },
+  { label: "Launch BONKAI", action: "launch" },
+  { label: "Trending on Solana", action: "trending" },
+  { label: "My Portfolio", action: "portfolio" },
 ];
 
 const Chat = () => {
@@ -91,16 +91,16 @@ const Chat = () => {
     
     switch(command) {
       case "swap":
-        commandMessage = "I want to swap SOL to USDC";
+        commandMessage = "Swap 5 $SOL to $BONK";
         break;
       case "launch":
-        commandMessage = "Help me launch a new token on Solana";
+        commandMessage = "Launch a meme token called BONKAI";
         break;
-      case "analyze":
-        commandMessage = "Analyze my Solana portfolio";
+      case "trending":
+        commandMessage = "What's trending on Solana right now?";
         break;
-      case "market":
-        commandMessage = "What's happening in the Solana market today?";
+      case "portfolio":
+        commandMessage = "Show my portfolio";
         break;
       default:
         commandMessage = command;
@@ -342,3 +342,4 @@ const Chat = () => {
 };
 
 export default Chat;
+

@@ -184,26 +184,27 @@ interface SuggestedActionsProps {
 function PureSuggestedActions({
   onSelectAction,
 }: SuggestedActionsProps) {
+  // Updated suggested actions with Solana-specific prompts
   const suggestedActions = [
     {
-      title: 'How can I improve',
-      label: 'my time management skills?',
-      action: 'How can I improve my time management skills?',
+      title: 'Swap 5 $SOL',
+      label: 'to $BONK',
+      action: 'Swap 5 $SOL to $BONK',
     },
     {
-      title: 'Suggest ideas for',
-      label: 'a creative writing project',
-      action: 'Suggest ideas for a creative writing project',
+      title: 'Launch a meme token',
+      label: 'called BONKAI',
+      action: 'Launch a meme token called BONKAI',
     },
     {
-      title: 'What are some tips',
-      label: 'for staying motivated?',
-      action: 'What are some tips for staying motivated?',
+      title: "What's trending",
+      label: 'on Solana right now?',
+      action: "What's trending on Solana right now?",
     },
     {
-      title: 'Help me brainstorm',
-      label: 'ideas for a new hobby',
-      action: 'Help me brainstorm ideas for a new hobby',
+      title: 'Show my',
+      label: 'portfolio',
+      action: 'Show my portfolio',
     },
   ];
 
