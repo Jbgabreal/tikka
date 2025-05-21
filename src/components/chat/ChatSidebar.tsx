@@ -4,12 +4,23 @@ import { MessageSquare, History, Settings, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Link, useLocation } from "react-router-dom";
 
 interface ChatSidebarProps {
   onClose?: () => void;
 }
 
 const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
+  const location = useLocation();
+  const path = location.pathname;
+  
+  // Define navigation items
+  const navItems = [
+    { icon: MessageSquare, label: "Chat", route: "/chat", active: path === "/chat" },
+    { icon: History, label: "History", route: "#", active: false },
+    { icon: Settings, label: "Settings", route: "/settings", active: path === "/settings" },
+  ];
+  
   return (
     <div className="w-[260px] border-r border-chatta-purple/20 h-screen flex flex-col bg-gradient-to-b from-chatta-darker to-chatta-dark">
       {/* Header with logo */}
@@ -33,19 +44,15 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
       {/* Navigation */}
       <nav className="flex-grow p-4">
         <ul className="space-y-1">
-          {[
-            { icon: MessageSquare, label: "Chat", active: true },
-            { icon: History, label: "History" },
-            { icon: Settings, label: "Settings" },
-          ].map((item, index) => (
+          {navItems.map((item, index) => (
             <motion.li 
               key={index}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1, duration: 0.3 }}
             >
-              <a 
-                href="#" 
+              <Link
+                to={item.route} 
                 className={cn(
                   "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all",
                   item.active 
@@ -55,7 +62,7 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
               >
                 <item.icon size={18} className={item.active ? "text-chatta-purple" : ""} />
                 <span>{item.label}</span>
-              </a>
+              </Link>
             </motion.li>
           ))}
         </ul>
@@ -84,6 +91,9 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
         <Button 
           variant="chatta" 
           className="w-full text-sm font-medium"
+          onClick={() => {
+            window.location.href = "/chat";
+          }}
         >
           New Chat
         </Button>

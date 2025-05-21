@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Index from "./pages/Index";
 import Chat from "./pages/Chat";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -14,7 +15,7 @@ const queryClient = new QueryClient();
 // Layout component to conditionally render the Navbar
 const Layout = () => {
   const location = useLocation();
-  const showNavbar = location.pathname !== "/chat";
+  const showNavbar = !["chat", "settings"].includes(location.pathname.split("/")[1]);
   
   return (
     <>
@@ -23,6 +24,7 @@ const Layout = () => {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/chat" element={<Chat />} />
+          <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

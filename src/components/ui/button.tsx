@@ -22,6 +22,7 @@ const buttonVariants = cva(
         chatta: "bg-chatta-purple text-white hover:bg-chatta-purple/90 rounded-full hover:scale-105 transition-all duration-200 hover:glow-sm",
         "chatta-secondary": "bg-transparent border border-chatta-purple/30 text-white hover:bg-chatta-purple/10 hover:border-chatta-purple/50 rounded-full hover:scale-105 transition-all duration-200 hover:glow-sm",
         "chatta-gradient": "bg-gradient-to-r from-chatta-purple to-chatta-cyan hover:opacity-90 text-white rounded-full hover:scale-105 transition-all duration-200 glow",
+        "chatta-danger": "bg-destructive text-white hover:bg-destructive/90 rounded-full hover:scale-105 transition-all duration-200",
       },
       size: {
         default: "h-10 px-4 py-2",
