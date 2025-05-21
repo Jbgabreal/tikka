@@ -76,7 +76,8 @@ export function Navbar() {
         
         {/* Launch App Button - Right */}
         <Button 
-          className="bg-chatta-purple hover:bg-chatta-purple/90 text-white rounded-full px-5 py-2 glow transition-all hover:scale-105"
+          variant="chatta"
+          size="chatta"
           onClick={handleLaunchApp}
         >
           <ExternalLink size={18} className="mr-2" />

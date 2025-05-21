@@ -3,6 +3,7 @@ import React from "react";
 import { MessageSquare, History, Settings, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
 
 interface ChatSidebarProps {
   onClose?: () => void;
@@ -80,9 +81,12 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
       
       {/* Footer */}
       <div className="p-4 border-t border-chatta-purple/20">
-        <button className="w-full py-2 rounded-lg bg-chatta-purple hover:bg-chatta-purple/90 text-sm font-medium">
+        <Button 
+          variant="chatta" 
+          className="w-full text-sm font-medium"
+        >
           New Chat
-        </button>
+        </Button>
       </div>
     </div>
   );

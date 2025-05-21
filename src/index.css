@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -62,6 +61,19 @@
     box-shadow: 0 0 20px rgba(54, 240, 255, 0.3);
   }
   
+  /* Button specific styling */
+  .btn-chatta {
+    @apply rounded-full bg-chatta-purple text-white hover:bg-chatta-purple/90 hover:scale-105 transition-all duration-200 hover:glow-sm;
+  }
+  
+  .btn-chatta-secondary {
+    @apply rounded-full bg-transparent border border-chatta-purple/30 text-white hover:bg-chatta-purple/10 hover:border-chatta-purple/50 hover:scale-105 transition-all duration-200 hover:glow-sm;
+  }
+  
+  .btn-chatta-gradient {
+    @apply rounded-full bg-gradient-to-r from-chatta-purple to-chatta-cyan hover:opacity-90 text-white hover:scale-105 transition-all duration-200 glow;
+  }
+
   .gradient-border {
     position: relative;
     border-radius: 0.5rem;

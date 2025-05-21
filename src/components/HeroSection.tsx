@@ -22,13 +22,16 @@ const HeroSection = () => {
           </p>
           <div className="flex flex-wrap gap-4">
             <Button
-              className="bg-gradient-to-r from-chatta-purple to-chatta-cyan hover:opacity-90 text-white font-bold px-8 py-6 rounded-xl text-lg glow"
+              variant="chatta-gradient"
+              size="chatta"
+              className="text-lg font-bold py-6"
             >
               Start Chatting
             </Button>
             <Button
-              variant="outline"
-              className="border-2 border-chatta-cyan text-white font-bold px-8 py-6 rounded-xl text-lg hover:bg-chatta-cyan/10"
+              variant="chatta-secondary"
+              size="chatta"
+              className="text-lg font-bold py-6"
             >
               See Demo
             </Button>

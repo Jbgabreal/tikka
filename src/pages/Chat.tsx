@@ -210,9 +210,11 @@ const Chat = () => {
             ) : (
               <Button
                 onClick={handleConnectWallet}
-                variant="outline"
-                className="text-sm bg-chatta-purple/10 hover:bg-chatta-purple/20 border-chatta-purple/30"
+                variant="chatta"
+                size="chatta"
+                className="text-sm"
               >
+                <Wallet className="mr-2" size={16} />
                 Connect Wallet
               </Button>
             )}
@@ -380,7 +382,9 @@ const Chat = () => {
                 
                 <Button 
                   onClick={handleConnectWallet}
-                  className="bg-chatta-purple hover:bg-chatta-purple/90 hover:scale-105 text-white py-3 px-6 rounded-full glow font-medium transition-all relative z-10"
+                  variant="chatta-gradient"
+                  size="chatta"
+                  className="py-3 font-medium relative z-10"
                 >
                   <Wallet className="mr-2" size={18} />
                   Connect Wallet

@@ -17,8 +17,9 @@ const CtaSection = () => {
             with the power of AI conversation.
           </p>
           <Button
-            className="bg-gradient-to-r from-chatta-purple to-chatta-cyan hover:opacity-90 text-white font-bold px-8 py-6 rounded-xl text-lg glow"
-            style={{ minWidth: "200px" }}
+            variant="chatta-gradient"
+            size="chatta"
+            className="text-lg font-bold py-6 min-w-[200px]"
           >
             Launch Chatta Now
           </Button>
