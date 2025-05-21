@@ -164,19 +164,20 @@ const Chat = () => {
           showSidebar ? "md:ml-[260px]" : ""
         )}>
           {/* Header with wallet connection */}
-          <div className="border-b border-chatta-purple/10 p-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <img src="/lovable-uploads/ac4cd6a8-b121-475a-9021-d930c27581e3.png" alt="Chatta" className="h-8" />
-            </div>
+          <div className="border-b border-chatta-purple/10 p-4 flex items-center justify-end">
             {walletConnected ? (
               <div className="flex items-center gap-2 bg-chatta-purple/10 px-3 py-1 rounded-full border border-chatta-purple/20">
                 <div className="w-2 h-2 rounded-full bg-chatta-cyan"></div>
                 <span className="text-sm text-gray-300">Wallet: {walletAddress}</span>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-400">Connect to continue</span>
-              </div>
+              <Button
+                onClick={handleConnectWallet}
+                variant="outline"
+                className="text-sm bg-chatta-purple/10 hover:bg-chatta-purple/20 border-chatta-purple/30"
+              >
+                Connect to continue
+              </Button>
             )}
           </div>
           
