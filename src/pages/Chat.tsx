@@ -206,7 +206,7 @@ const Chat = () => {
                       >
                         {message.role !== 'user' && (
                           <Avatar className="h-8 w-8 mr-3 mt-1">
-                            <AvatarImage src="/lovable-uploads/ac4cd6a8-b121-475a-9021-d930c27581e3.png" alt="Chatta" />
+                            <AvatarImage src="/lovable-uploads/d2b1a35c-65a9-4cc4-b0cd-d9788572aae6.png" alt="Chatta" />
                             <AvatarFallback className="bg-gradient-to-br from-chatta-purple to-chatta-cyan text-white">CH</AvatarFallback>
                           </Avatar>
                         )}
@@ -263,7 +263,7 @@ const Chat = () => {
                     className="flex items-center gap-2 text-gray-400 mb-4"
                   >
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src="/lovable-uploads/ac4cd6a8-b121-475a-9021-d930c27581e3.png" alt="Chatta" />
+                      <AvatarImage src="/lovable-uploads/d2b1a35c-65a9-4cc4-b0cd-d9788572aae6.png" alt="Chatta" />
                       <AvatarFallback className="bg-gradient-to-br from-chatta-purple to-chatta-cyan text-white">CH</AvatarFallback>
                     </Avatar>
                     <div className="flex px-3 py-2 bg-chatta-purple/10 rounded-2xl">

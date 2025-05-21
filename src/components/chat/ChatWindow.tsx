@@ -81,7 +81,7 @@ const ChatWindow = () => {
             >
               {!msg.isUser && (
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="" />
+                  <AvatarImage src="/lovable-uploads/d2b1a35c-65a9-4cc4-b0cd-d9788572aae6.png" alt="Chatta" />
                   <AvatarFallback className="bg-chatta-purple/20 text-chatta-purple">CH</AvatarFallback>
                 </Avatar>
               )}
