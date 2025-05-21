@@ -1,28 +1,28 @@
 
 import React from "react";
-import { MessageSquare, ArrowLeftRight, BarChart2, Search } from "lucide-react";
+import { MessageSquare, ArrowLeftRight, BarChart2, Zap } from "lucide-react";
 
 const FeaturesGrid = () => {
   const features = [
     {
       icon: <MessageSquare className="w-10 h-10 text-chatta-cyan" />,
-      title: "Natural Language Interface",
+      title: "Natural Language Chat",
       description: "Chat naturally with Chatta as you would with a friend. No complex commands required."
     },
     {
       icon: <ArrowLeftRight className="w-10 h-10 text-chatta-purple" />,
-      title: "Smart Token Swaps",
-      description: "Instantly swap tokens through conversation. Chatta finds the best routes and rates."
+      title: "Token Swaps & DeFi Commands",
+      description: "Instantly swap tokens and execute DeFi actions through simple conversation."
     },
     {
       icon: <BarChart2 className="w-10 h-10 text-chatta-cyan" />,
-      title: "Live Portfolio View",
+      title: "Real-Time Portfolio Visualization",
       description: "Track your assets, monitor performance, and analyze investment opportunities."
     },
     {
-      icon: <Search className="w-10 h-10 text-chatta-purple" />,
-      title: "AI-Powered Insights",
-      description: "Receive intelligent recommendations based on market trends and your activity."
+      icon: <Zap className="w-10 h-10 text-chatta-purple" />,
+      title: "Instant Blockchain Execution",
+      description: "Execute transactions with speed and precision directly from your chat interface."
     }
   ];
 
@@ -32,21 +32,21 @@ const FeaturesGrid = () => {
       
       <div className="container mx-auto px-4 relative z-10">
         <h2 className="text-3xl md:text-4xl font-bold mb-4 text-center">
-          Core <span className="gradient-text">Features</span>
+          Key <span className="gradient-text">Features</span>
         </h2>
         <p className="text-gray-400 text-center max-w-2xl mx-auto mb-16">
           Everything you need to navigate Solana with confidence,
-          powered by advanced AI and real-time data.
+          powered by advanced AI and real-time blockchain data.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {features.map((feature, index) => (
             <div 
               key={index}
-              className="glass-card gradient-border p-6 hover:scale-[1.02] transition-transform duration-300"
+              className="glass-card gradient-border p-6 hover:scale-[1.02] transition-transform duration-300 hover:shadow-lg hover:shadow-chatta-purple/20"
             >
               <div className="mb-6">
-                <div className="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center shadow-inner shadow-chatta-purple/20">
                   {feature.icon}
                 </div>
               </div>
