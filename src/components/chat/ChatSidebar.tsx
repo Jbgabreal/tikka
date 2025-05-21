@@ -4,7 +4,7 @@ import { MessageSquare, History, Settings, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 interface ChatSidebarProps {
   onClose?: () => void;
@@ -12,18 +12,21 @@ interface ChatSidebarProps {
 
 const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const path = location.pathname;
   
   // Debug logs for component lifecycle and current path
   useEffect(() => {
     console.log("ChatSidebar mounted");
     console.log("Current path:", path);
-    console.log("Location object:", location);
+    console.log("Full location object:", location);
+    console.log("Navigate function available:", !!navigate);
+    console.log("onClose function available:", !!onClose);
     
     return () => {
       console.log("ChatSidebar unmounted");
     };
-  }, [path, location]);
+  }, [path, location, navigate, onClose]);
   
   // Define navigation items
   const navItems = [
@@ -41,11 +44,16 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
     }
   };
   
-  // Debug navigation clicks
-  const handleNavClick = (route: string) => {
-    console.log(`Navigation clicked: ${route}`);
+  const handleLinkClick = (route: string) => {
+    console.log(`Link clicked for route: ${route}`);
     console.log("Current path before navigation:", path);
-    handleClose();
+    console.log("Using direct Link component navigation");
+    
+    // Only call onClose if it exists and we're navigating away
+    if (onClose) {
+      console.log("Will close sidebar after navigation");
+      onClose();
+    }
   };
   
   console.log("Rendering ChatSidebar with path:", path);
@@ -95,7 +103,7 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
             >
               <Link
                 to={item.route}
-                onClick={() => handleNavClick(item.route)}
+                onClick={() => handleLinkClick(item.route)}
                 className={cn(
                   "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all cursor-pointer",
                   item.active 
