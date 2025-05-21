@@ -2,7 +2,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -24,32 +24,43 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, navItems }) =>
   if (!isOpen) return null;
   
   const handleNavClick = (item: NavItem, event: React.MouseEvent) => {
-    // Handle navigation differently based on URL type
-    if (item.url.startsWith('#')) {
-      // If we're not on homepage and trying to navigate to a section
-      if (location.pathname !== '/') {
-        navigate('/');
-        // Allow the navigation to complete before scrolling
-        setTimeout(() => {
+    event.preventDefault();
+    console.log(`Mobile menu: clicked item ${item.name}`);
+    
+    // First close the menu
+    onClose();
+    
+    // Small delay to allow animation to complete
+    setTimeout(() => {
+      // Handle navigation differently based on URL type
+      if (item.url.startsWith('#')) {
+        console.log(`Mobile menu: navigating to hash ${item.url}`);
+        // If we're not on homepage and trying to navigate to a section
+        if (location.pathname !== '/') {
+          console.log('Mobile menu: navigating to home first');
+          navigate('/');
+          // Allow the navigation to complete before scrolling
+          setTimeout(() => {
+            const element = document.querySelector(item.url);
+            if (element) {
+              console.log(`Mobile menu: scrolling to element ${item.url}`);
+              element.scrollIntoView({ behavior: 'smooth' });
+            }
+          }, 100);
+        } else {
+          // Direct scroll if already on homepage
+          console.log(`Mobile menu: already on homepage, scrolling to ${item.url}`);
           const element = document.querySelector(item.url);
           if (element) {
             element.scrollIntoView({ behavior: 'smooth' });
           }
-        }, 100);
-      } else {
-        // Direct scroll if already on homepage
-        const element = document.querySelector(item.url);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
         }
+      } else {
+        // Regular page navigation
+        console.log(`Mobile menu: navigating to ${item.url}`);
+        navigate(item.url);
       }
-      onClose();
-      event.preventDefault();
-    } else {
-      // Regular page navigation
-      navigate(item.url);
-      onClose();
-    }
+    }, 50);
   };
   
   return (
