@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useNavigate, useLocation } from "react-router-dom"
 
 interface NavItem {
   name: string
@@ -18,8 +19,26 @@ interface NavBarProps {
 }
 
 export function NavBar({ items, className }: NavBarProps) {
-  const [activeTab, setActiveTab] = useState(items[0].name)
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [activeTab, setActiveTab] = useState<string>("")
   const [isMobile, setIsMobile] = useState(false)
+  
+  // Set active tab based on current location
+  useEffect(() => {
+    // Find matching item or default to first item
+    const currentPath = location.pathname
+    const matchingItem = items.find(item => {
+      // For hash routes on homepage
+      if (item.url.startsWith('#') && currentPath === '/') {
+        return true
+      }
+      // For other routes
+      return item.url === currentPath
+    })
+    
+    setActiveTab(matchingItem?.name || items[0].name)
+  }, [location, items])
 
   useEffect(() => {
     const handleResize = () => {
@@ -30,6 +49,31 @@ export function NavBar({ items, className }: NavBarProps) {
     window.addEventListener("resize", handleResize)
     return () => window.removeEventListener("resize", handleResize)
   }, [])
+
+  const handleNavClick = (item: NavItem, event: React.MouseEvent) => {
+    setActiveTab(item.name)
+    
+    // Handle navigation differently based on URL type
+    if (item.url.startsWith('#')) {
+      // If we're not on homepage and trying to navigate to a section
+      if (location.pathname !== '/') {
+        navigate('/')
+        // Allow the navigation to complete before scrolling
+        setTimeout(() => {
+          const element = document.querySelector(item.url)
+          element?.scrollIntoView({ behavior: 'smooth' })
+        }, 100)
+      } else {
+        // Direct scroll if already on homepage
+        const element = document.querySelector(item.url)
+        element?.scrollIntoView({ behavior: 'smooth' })
+      }
+      event.preventDefault()
+    } else {
+      // Regular page navigation
+      navigate(item.url)
+    }
+  }
 
   return (
     <div
@@ -47,7 +91,7 @@ export function NavBar({ items, className }: NavBarProps) {
             <a
               key={item.name}
               href={item.url}
-              onClick={() => setActiveTab(item.name)}
+              onClick={(e) => handleNavClick(item, e)}
               className={cn(
                 "relative cursor-pointer text-sm font-semibold px-4 py-1.5 rounded-full transition-colors",
                 "text-foreground/80 hover:text-primary",

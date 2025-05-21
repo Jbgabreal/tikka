@@ -2,12 +2,13 @@
 import { Home, User, Briefcase, FileText, MessageSquare, ExternalLink, Menu } from 'lucide-react'
 import { NavBar } from "@/components/ui/tubelight-navbar"
 import { Button } from "@/components/ui/button"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { useState, useEffect } from "react"
 import MobileMenu from "./MobileMenu"
 
 export function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   
@@ -18,6 +19,19 @@ export function Navbar() {
     { name: 'Docs', url: '#docs', icon: FileText },
     { name: 'Chat', url: '/chat', icon: MessageSquare }
   ]
+
+  // Find the active nav item based on current path
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const navItem = navItems.find(item => {
+      // For hash routes, check if we're on homepage
+      if (item.url.startsWith('#')) {
+        return currentPath === '/';
+      }
+      // For other routes, check exact match
+      return item.url === currentPath;
+    });
+  }, [location, navItems]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -56,6 +70,8 @@ export function Navbar() {
             src="/lovable-uploads/4e3faff9-aeeb-4667-84fe-6c0002c1fca1.png" 
             alt="Chatta" 
             className="h-8 sm:h-9 mr-3"
+            onClick={() => navigate('/')}
+            style={{ cursor: 'pointer' }}
           />
         </div>
         

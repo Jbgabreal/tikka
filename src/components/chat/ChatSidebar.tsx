@@ -4,7 +4,7 @@ import { MessageSquare, History, Settings, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 interface ChatSidebarProps {
   onClose?: () => void;
@@ -12,12 +12,13 @@ interface ChatSidebarProps {
 
 const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const path = location.pathname;
   
   // Define navigation items
   const navItems = [
     { icon: MessageSquare, label: "Chat", route: "/chat", active: path === "/chat" },
-    { icon: History, label: "History", route: "#", active: false },
+    { icon: History, label: "History", route: "/chat?history=true", active: path.includes("history") },
     { icon: Settings, label: "Settings", route: "/settings", active: path === "/settings" },
   ];
   
@@ -27,7 +28,9 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
       <div className="p-4 border-b border-chatta-purple/20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="/lovable-uploads/4e3faff9-aeeb-4667-84fe-6c0002c1fca1.png" alt="Chatta" className="h-9" />
+            <Link to="/">
+              <img src="/lovable-uploads/4e3faff9-aeeb-4667-84fe-6c0002c1fca1.png" alt="Chatta" className="h-9" />
+            </Link>
           </div>
           
           {onClose && (
@@ -92,7 +95,8 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
           variant="chatta" 
           className="w-full text-sm font-medium"
           onClick={() => {
-            window.location.href = "/chat";
+            navigate("/chat");
+            if (onClose) onClose();
           }}
         >
           New Chat
