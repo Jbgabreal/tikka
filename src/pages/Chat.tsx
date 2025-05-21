@@ -1,5 +1,4 @@
-
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PureMultimodalInput } from "@/components/ui/multimodal-ai-chat-input";
 import ChatSidebar from "@/components/chat/ChatSidebar";
@@ -8,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Wallet } from "lucide-react";
+import { useLocation } from "react-router-dom";
 
 interface Attachment {
   url: string;
@@ -72,8 +72,27 @@ const Chat = () => {
   const [showSidebar, setShowSidebar] = useState(true);
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  
+  const location = useLocation();
+  
+  // Debug logs
+  useEffect(() => {
+    console.log("Chat component mounted");
+    console.log("Current location:", location);
+    
+    return () => {
+      console.log("Chat component unmounted");
+    };
+  }, [location]);
+
+  // Debug sidebar state
+  useEffect(() => {
+    console.log("Sidebar visibility state:", showSidebar);
+  }, [showSidebar]);
 
   const handleSendMessage = useCallback(({ input, attachments }: { input: string; attachments: Attachment[] }) => {
+    console.log("handleSendMessage called with:", { input, attachmentsCount: attachments.length });
+    
     // Add user message to the messages array
     const userMessage: UIMessage = {
       id: `user-${Date.now()}`,
@@ -107,6 +126,8 @@ const Chat = () => {
   }, []);
 
   const handleQuickCommand = useCallback((command: string) => {
+    console.log("Quick command selected:", command);
+    
     let commandMessage = "";
     
     switch(command) {
@@ -143,17 +164,37 @@ const Chat = () => {
     }, 1000);
   };
 
+  const handleToggleSidebar = () => {
+    console.log("Toggling sidebar from", showSidebar, "to", !showSidebar);
+    setShowSidebar(!showSidebar);
+  };
+
+  const handleCloseSidebar = useCallback(() => {
+    console.log("Closing sidebar from ChatSidebar onClose callback");
+    if (isMobile) {
+      setShowSidebar(false);
+    }
+  }, [isMobile]);
+
   // For responsive design
   React.useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-      setShowSidebar(window.innerWidth >= 768);
+      const newIsMobile = window.innerWidth < 768;
+      setIsMobile(newIsMobile);
+      
+      // Only update showSidebar if the mobile state changes
+      if (newIsMobile !== isMobile) {
+        console.log("Mobile state changed:", newIsMobile);
+        setShowSidebar(window.innerWidth >= 768);
+      }
     };
     
     handleResize(); // Initial check
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [isMobile]);
+
+  console.log("Rendering Chat component, showSidebar:", showSidebar, "isMobile:", isMobile);
 
   return (
     <div className="flex min-h-screen bg-chatta-darker overflow-hidden relative">
@@ -163,7 +204,7 @@ const Chat = () => {
       {/* Mobile Sidebar Toggle */}
       {isMobile && (
         <button 
-          onClick={() => setShowSidebar(!showSidebar)}
+          onClick={handleToggleSidebar}
           className="fixed top-4 left-4 z-50 rounded-full bg-chatta-purple/20 p-2"
         >
           <div className="w-6 h-0.5 bg-white mb-1"></div>
@@ -184,7 +225,7 @@ const Chat = () => {
             style={{ width: '260px' }}
           >
             <ChatSidebar 
-              onClose={isMobile ? () => setShowSidebar(false) : undefined}
+              onClose={handleCloseSidebar}
             />
           </motion.div>
         )}

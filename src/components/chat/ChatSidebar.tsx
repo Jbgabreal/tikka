@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { MessageSquare, History, Settings, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -14,12 +14,42 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
   const location = useLocation();
   const path = location.pathname;
   
+  // Debug logs for component lifecycle and current path
+  useEffect(() => {
+    console.log("ChatSidebar mounted");
+    console.log("Current path:", path);
+    console.log("Location object:", location);
+    
+    return () => {
+      console.log("ChatSidebar unmounted");
+    };
+  }, [path, location]);
+  
   // Define navigation items
   const navItems = [
     { icon: MessageSquare, label: "Chat", route: "/chat", active: path === "/chat" },
     { icon: History, label: "History", route: "/chat?history=true", active: path.includes("history") },
     { icon: Settings, label: "Settings", route: "/settings", active: path === "/settings" },
   ];
+
+  // Log when close is called
+  const handleClose = () => {
+    console.log("Sidebar close handler called");
+    if (onClose) {
+      console.log("Executing onClose function");
+      onClose();
+    }
+  };
+  
+  // Debug navigation clicks
+  const handleNavClick = (route: string) => {
+    console.log(`Navigation clicked: ${route}`);
+    console.log("Current path before navigation:", path);
+    handleClose();
+  };
+  
+  console.log("Rendering ChatSidebar with path:", path);
+  console.log("onClose prop exists:", !!onClose);
   
   return (
     <div className="w-[260px] border-r border-chatta-purple/20 h-screen flex flex-col bg-gradient-to-b from-chatta-darker to-chatta-dark">
@@ -29,7 +59,10 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
           <div className="flex items-center gap-2">
             <Link 
               to="/"
-              onClick={onClose}
+              onClick={() => {
+                console.log("Logo link clicked, navigating to /");
+                handleClose();
+              }}
               className="cursor-pointer"
             >
               <img src="/lovable-uploads/4e3faff9-aeeb-4667-84fe-6c0002c1fca1.png" alt="Chatta" className="h-9" />
@@ -38,7 +71,10 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
           
           {onClose && (
             <button 
-              onClick={onClose}
+              onClick={() => {
+                console.log("Close button clicked");
+                handleClose();
+              }}
               className="text-gray-400 hover:text-white"
             >
               <X size={18} />
@@ -59,7 +95,7 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
             >
               <Link
                 to={item.route}
-                onClick={onClose}
+                onClick={() => handleNavClick(item.route)}
                 className={cn(
                   "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all cursor-pointer",
                   item.active 
@@ -86,7 +122,10 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
             <li key={index}>
               <Link
                 to="/chat"
-                onClick={onClose}
+                onClick={() => {
+                  console.log(`Recent chat clicked: ${chat}`);
+                  handleClose();
+                }}
                 className="text-gray-400 hover:text-white text-sm flex items-center gap-2 px-2 py-1.5 rounded hover:bg-chatta-purple/10 cursor-pointer"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-chatta-cyan"></span>
@@ -104,7 +143,13 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
           className="w-full text-sm font-medium"
           asChild
         >
-          <Link to="/chat" onClick={onClose}>
+          <Link 
+            to="/chat" 
+            onClick={() => {
+              console.log("New Chat button clicked");
+              handleClose();
+            }}
+          >
             New Chat
           </Link>
         </Button>
