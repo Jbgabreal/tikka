@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PureMultimodalInput } from "@/components/ui/multimodal-ai-chat-input";
@@ -29,6 +30,38 @@ const quickCommands = [
   { label: "Trending on Solana", action: "trending" },
   { label: "My Portfolio", action: "portfolio" },
 ];
+
+// Background ambient dot animation
+const AmbientBackground = () => {
+  return (
+    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_#12121a,_#0a090e)]">
+        {/* Ambient dots */}
+        {[...Array(15)].map((_, i) => (
+          <div 
+            key={i}
+            className="absolute rounded-full bg-chatta-purple/5"
+            style={{
+              width: `${Math.random() * 10 + 3}px`,
+              height: `${Math.random() * 10 + 3}px`,
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              animationDuration: `${Math.random() * 20 + 10}s`,
+              animationDelay: `${Math.random() * 5}s`,
+              opacity: Math.random() * 0.3
+            }}
+          />
+        ))}
+      </div>
+      
+      {/* Subtle glow in top-left */}
+      <div className="absolute -top-40 -left-40 w-96 h-96 bg-chatta-purple/10 blur-[100px] rounded-full" />
+      
+      {/* Secondary glow */}
+      <div className="absolute top-1/3 right-0 w-72 h-72 bg-chatta-cyan/5 blur-[80px] rounded-full" />
+    </div>
+  );
+};
 
 const Chat = () => {
   const [messages, setMessages] = useState<UIMessage[]>([]);
@@ -123,7 +156,10 @@ const Chat = () => {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-chatta-dark text-white">
+    <div className="flex min-h-screen bg-chatta-darker overflow-hidden relative">
+      {/* Background with ambient effects */}
+      <AmbientBackground />
+
       {/* Mobile Sidebar Toggle */}
       {isMobile && (
         <button 
@@ -163,7 +199,7 @@ const Chat = () => {
         )}></div>
         
         {/* Main content container */}
-        <div className="w-full max-w-[720px] flex flex-col h-screen">
+        <div className="w-full max-w-[720px] flex flex-col h-screen bg-gradient-to-b from-black/5 to-transparent backdrop-blur-sm relative z-10">
           {/* Header with wallet connection */}
           <div className="border-b border-chatta-purple/10 p-4 flex items-center justify-end">
             {walletConnected ? (
@@ -184,7 +220,7 @@ const Chat = () => {
           
           {/* Conditional content based on wallet connection */}
           {walletConnected ? (
-            <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 flex flex-col overflow-hidden neo-blur">
               {/* Messages area with centered content */}
               <div className="flex-1 overflow-y-auto p-4 md:p-6">
                 <AnimatePresence>
@@ -192,11 +228,14 @@ const Chat = () => {
                     <motion.div 
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="flex flex-col items-center justify-center h-full text-center gap-4 py-12"
+                      className="flex flex-col items-center justify-center h-full text-center gap-4 py-12 relative"
                     >
-                      <img src="/lovable-uploads/ac4cd6a8-b121-475a-9021-d930c27581e3.png" alt="Chatta" className="h-16" />
-                      <h2 className="text-2xl font-bold gradient-text">Welcome to Chatta</h2>
-                      <p className="text-gray-400 max-w-md">
+                      {/* Accent glow behind welcome message */}
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-chatta-purple/5 rounded-full blur-3xl" />
+                      
+                      <img src="/lovable-uploads/ac4cd6a8-b121-475a-9021-d930c27581e3.png" alt="Chatta" className="h-16 relative z-10" />
+                      <h2 className="text-2xl font-bold gradient-text relative z-10">Welcome to Chatta</h2>
+                      <p className="text-gray-400 max-w-md relative z-10">
                         Your AI assistant for Solana. Ask me to swap tokens, launch a project, or analyze your portfolio.
                       </p>
                     </motion.div>
@@ -323,22 +362,25 @@ const Chat = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="text-center w-full px-6 py-8"
+                className="text-center w-full px-6 py-8 relative"
               >
+                {/* Accent glow behind connect wallet UI */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-chatta-purple/10 rounded-full blur-3xl" />
+                
                 <img 
                   src="/lovable-uploads/ac4cd6a8-b121-475a-9021-d930c27581e3.png" 
                   alt="Chatta" 
-                  className="h-24 mx-auto mb-6 animate-pulse-glow" 
+                  className="h-24 mx-auto mb-6 animate-pulse-glow relative z-10" 
                 />
                 
-                <h2 className="text-2xl font-bold gradient-text mb-4">Connect Your Wallet</h2>
-                <p className="text-gray-400 mb-8">
+                <h2 className="text-2xl font-bold gradient-text mb-4 relative z-10">Connect Your Wallet</h2>
+                <p className="text-gray-400 mb-8 relative z-10">
                   To access Chatta's AI assistant for Solana, please connect your wallet to continue.
                 </p>
                 
                 <Button 
                   onClick={handleConnectWallet}
-                  className="bg-chatta-purple hover:bg-chatta-purple/90 hover:scale-105 text-white py-3 px-6 rounded-full glow font-medium transition-all"
+                  className="bg-chatta-purple hover:bg-chatta-purple/90 hover:scale-105 text-white py-3 px-6 rounded-full glow font-medium transition-all relative z-10"
                 >
                   <Wallet className="mr-2" size={18} />
                   Connect Wallet
