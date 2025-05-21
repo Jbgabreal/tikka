@@ -2,8 +2,11 @@
 import { Home, User, Briefcase, FileText, MessageSquare, ExternalLink } from 'lucide-react'
 import { NavBar } from "@/components/ui/tubelight-navbar"
 import { Button } from "@/components/ui/button"
+import { useNavigate } from "react-router-dom"
 
 export function Navbar() {
+  const navigate = useNavigate();
+  
   const navItems = [
     { name: 'Home', url: '/', icon: Home },
     { name: 'How It Works', url: '#how-it-works', icon: User },
@@ -12,11 +15,18 @@ export function Navbar() {
     { name: 'Chat', url: '/chat', icon: MessageSquare }
   ]
 
+  const handleLaunchApp = () => {
+    navigate('/chat');
+  };
+
   return (
     <div className="relative">
       <NavBar items={navItems} className="sm:top-6" />
       <div className="fixed top-6 right-6 z-50 hidden sm:block">
-        <Button className="bg-chatta-purple hover:bg-chatta-purple/90 glow text-white rounded-full">
+        <Button 
+          className="bg-chatta-purple hover:bg-chatta-purple/90 glow text-white rounded-full"
+          onClick={handleLaunchApp}
+        >
           <ExternalLink size={18} className="mr-2" />
           Launch App
         </Button>
