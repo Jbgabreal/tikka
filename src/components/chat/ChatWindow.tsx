@@ -64,7 +64,9 @@ const ChatWindow = () => {
     <div className="flex-1 flex flex-col h-screen">
       <header className="border-b border-chatta-purple/10 p-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-medium">Chat</h1>
+          <div className="flex items-center gap-2">
+            <img src="/lovable-uploads/4e3faff9-aeeb-4667-84fe-6c0002c1fca1.png" alt="Chatta" className="h-8" />
+          </div>
           <div className="flex items-center gap-2 text-sm text-gray-400 bg-chatta-purple/5 px-3 py-1 rounded-full">
             <div className="w-2 h-2 rounded-full bg-chatta-cyan"></div>
             <span>Wallet: 8xF2...k9J3</span>

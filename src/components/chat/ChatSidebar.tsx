@@ -15,10 +15,7 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
       <div className="p-4 border-b border-chatta-purple/20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-r from-chatta-purple to-chatta-cyan flex items-center justify-center">
-              <span className="text-white font-bold">C</span>
-            </div>
-            <h1 className="gradient-text text-2xl font-bold">Chatta</h1>
+            <img src="/lovable-uploads/4e3faff9-aeeb-4667-84fe-6c0002c1fca1.png" alt="Chatta" className="h-9" />
           </div>
           
           {onClose && (

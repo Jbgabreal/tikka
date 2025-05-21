@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PureMultimodalInput } from "@/components/ui/multimodal-ai-chat-input";
@@ -162,7 +161,9 @@ const Chat = () => {
         <div className="flex-1 flex flex-col min-h-screen ml-0 md:ml-[260px]">
           {/* Header with wallet connection */}
           <div className="border-b border-chatta-purple/10 p-4 flex items-center justify-between">
-            <h1 className="text-xl font-medium">Chat with Chatta</h1>
+            <div className="flex items-center gap-2">
+              <img src="/lovable-uploads/4e3faff9-aeeb-4667-84fe-6c0002c1fca1.png" alt="Chatta" className="h-8" />
+            </div>
             {walletConnected ? (
               <div className="flex items-center gap-2 bg-chatta-purple/10 px-3 py-1 rounded-full border border-chatta-purple/20">
                 <div className="w-2 h-2 rounded-full bg-chatta-cyan"></div>
@@ -187,9 +188,7 @@ const Chat = () => {
                       animate={{ opacity: 1 }}
                       className="flex flex-col items-center justify-center h-full text-center gap-4"
                     >
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-r from-chatta-purple to-chatta-cyan flex items-center justify-center">
-                        <span className="text-2xl">👋</span>
-                      </div>
+                      <img src="/lovable-uploads/4e3faff9-aeeb-4667-84fe-6c0002c1fca1.png" alt="Chatta" className="h-16" />
                       <h2 className="text-2xl font-bold gradient-text">Welcome to Chatta</h2>
                       <p className="text-gray-400 max-w-md">
                         Your AI assistant for Solana. Ask me to swap tokens, launch a project, or analyze your portfolio.
@@ -319,9 +318,7 @@ const Chat = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center max-w-md px-4"
               >
-                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-r from-chatta-purple to-chatta-cyan flex items-center justify-center">
-                  <Wallet size={36} className="text-white" />
-                </div>
+                <img src="/lovable-uploads/4e3faff9-aeeb-4667-84fe-6c0002c1fca1.png" alt="Chatta" className="h-24 mx-auto mb-6" />
                 
                 <h2 className="text-2xl font-bold gradient-text mb-4">Connect Your Wallet</h2>
                 <p className="text-gray-400 mb-8">
