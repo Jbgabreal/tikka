@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PureMultimodalInput } from "@/components/ui/multimodal-ai-chat-input";
@@ -40,18 +39,6 @@ const Chat = () => {
   const [showSidebar, setShowSidebar] = useState(true);
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
-
-  // For responsive design
-  React.useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-      setShowSidebar(window.innerWidth >= 768);
-    };
-    
-    handleResize(); // Initial check
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const handleSendMessage = useCallback(({ input, attachments }: { input: string; attachments: Attachment[] }) => {
     // Add user message to the messages array
@@ -123,8 +110,20 @@ const Chat = () => {
     }, 1000);
   };
 
+  // For responsive design
+  React.useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setShowSidebar(window.innerWidth >= 768);
+    };
+    
+    handleResize(); // Initial check
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-chatta-dark text-white flex">
+    <div className="flex min-h-screen bg-chatta-dark text-white">
       {/* Mobile Sidebar Toggle */}
       {isMobile && (
         <button 
@@ -155,12 +154,16 @@ const Chat = () => {
         )}
       </AnimatePresence>
       
-      {/* Main Chat Area - Center content with max-width */}
-      <div className={cn(
-        "flex-1 flex flex-col min-h-screen",
-        showSidebar && !isMobile ? "ml-[260px]" : ""
-      )}>
-        <div className="flex flex-col h-full">
+      {/* Main Chat Area - Centered relative to the page width */}
+      <div className="fixed inset-0 flex justify-center">
+        {/* Offset sidebar space on non-mobile */}
+        <div className={cn(
+          "hidden md:block",
+          showSidebar ? "w-[260px]" : "w-0"
+        )}></div>
+        
+        {/* Main content container */}
+        <div className="w-full max-w-[720px] flex flex-col h-screen">
           {/* Header with wallet connection */}
           <div className="border-b border-chatta-purple/10 p-4 flex items-center justify-end">
             {walletConnected ? (
@@ -174,149 +177,143 @@ const Chat = () => {
                 variant="outline"
                 className="text-sm bg-chatta-purple/10 hover:bg-chatta-purple/20 border-chatta-purple/30"
               >
-                Connect to continue
+                Connect Wallet
               </Button>
             )}
           </div>
           
           {/* Conditional content based on wallet connection */}
           {walletConnected ? (
-            <div className="flex-1 flex flex-col h-full">
+            <div className="flex-1 flex flex-col overflow-hidden">
               {/* Messages area with centered content */}
-              <div className="flex-1 overflow-y-auto p-4 md:p-6 flex justify-center">
-                <div className="w-full max-w-[720px]">
-                  <AnimatePresence>
-                    {messages.length === 0 ? (
-                      <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="flex flex-col items-center justify-center h-full text-center gap-4 py-12"
-                      >
-                        <img src="/lovable-uploads/ac4cd6a8-b121-475a-9021-d930c27581e3.png" alt="Chatta" className="h-16" />
-                        <h2 className="text-2xl font-bold gradient-text">Welcome to Chatta</h2>
-                        <p className="text-gray-400 max-w-md">
-                          Your AI assistant for Solana. Ask me to swap tokens, launch a project, or analyze your portfolio.
-                        </p>
-                      </motion.div>
-                    ) : (
-                      messages.map((message, index) => (
-                        <motion.div
-                          key={message.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.3, delay: 0.1 }}
-                          className={`flex mb-6 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                        >
-                          {message.role !== 'user' && (
-                            <Avatar className="h-8 w-8 mr-3 mt-1">
-                              <AvatarImage src="/lovable-uploads/efb222f9-a554-47a3-8b66-d5cfd2bf27b6.png" alt="Chatta" />
-                              <AvatarFallback className="bg-gradient-to-br from-chatta-purple to-chatta-cyan text-white">CH</AvatarFallback>
-                            </Avatar>
-                          )}
-                          
-                          <div className={`max-w-[80%] ${message.role === 'user' ? 'order-1' : 'order-2'}`}>
-                            <div 
-                              className={cn(
-                                "px-4 py-2 rounded-2xl",
-                                message.role === 'user' 
-                                  ? "bg-chatta-darker border border-white/10" 
-                                  : "bg-chatta-purple/20 border border-chatta-purple/30"
-                              )}
-                            >
-                              <p className="whitespace-pre-wrap">{message.content}</p>
-                              
-                              {message.attachments && message.attachments.length > 0 && (
-                                <div className="mt-2 flex flex-wrap gap-2">
-                                  {message.attachments.map((attachment) => (
-                                    <Badge 
-                                      key={attachment.url} 
-                                      className="bg-chatta-darker text-gray-300 border border-gray-700"
-                                    >
-                                      {attachment.name}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                            <div 
-                              className={`text-xs text-gray-500 mt-1 ${
-                                message.role === 'user' ? 'text-right' : 'text-left'
-                              }`}
-                            >
-                              {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                            </div>
-                          </div>
-                          
-                          {message.role === 'user' && (
-                            <Avatar className="h-8 w-8 ml-3 mt-1 order-2">
-                              <AvatarImage src="" />
-                              <AvatarFallback className="bg-gray-700 text-gray-300">U</AvatarFallback>
-                            </Avatar>
-                          )}
-                        </motion.div>
-                      ))
-                    )}
-                  </AnimatePresence>
-                  
-                  {/* Typing indicator */}
-                  {isGenerating && (
-                    <motion.div
+              <div className="flex-1 overflow-y-auto p-4 md:p-6">
+                <AnimatePresence>
+                  {messages.length === 0 ? (
+                    <motion.div 
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="flex items-center gap-2 text-gray-400 mb-4"
+                      className="flex flex-col items-center justify-center h-full text-center gap-4 py-12"
                     >
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src="/lovable-uploads/efb222f9-a554-47a3-8b66-d5cfd2bf27b6.png" alt="Chatta" />
-                        <AvatarFallback className="bg-gradient-to-br from-chatta-purple to-chatta-cyan text-white">CH</AvatarFallback>
-                      </Avatar>
-                      <div className="flex px-3 py-2 bg-chatta-purple/10 rounded-2xl">
-                        <span className="animate-pulse mr-1">●</span>
-                        <span className="animate-pulse animation-delay-200 mr-1">●</span>
-                        <span className="animate-pulse animation-delay-400">●</span>
-                      </div>
+                      <img src="/lovable-uploads/ac4cd6a8-b121-475a-9021-d930c27581e3.png" alt="Chatta" className="h-16" />
+                      <h2 className="text-2xl font-bold gradient-text">Welcome to Chatta</h2>
+                      <p className="text-gray-400 max-w-md">
+                        Your AI assistant for Solana. Ask me to swap tokens, launch a project, or analyze your portfolio.
+                      </p>
                     </motion.div>
+                  ) : (
+                    messages.map((message, index) => (
+                      <motion.div
+                        key={message.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.1 }}
+                        className={`flex mb-6 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        {message.role !== 'user' && (
+                          <Avatar className="h-8 w-8 mr-3 mt-1">
+                            <AvatarImage src="/lovable-uploads/efb222f9-a554-47a3-8b66-d5cfd2bf27b6.png" alt="Chatta" />
+                            <AvatarFallback className="bg-gradient-to-br from-chatta-purple to-chatta-cyan text-white">CH</AvatarFallback>
+                          </Avatar>
+                        )}
+                        
+                        <div className={`max-w-[80%] ${message.role === 'user' ? 'order-1' : 'order-2'}`}>
+                          <div 
+                            className={cn(
+                              "px-4 py-2 rounded-2xl",
+                              message.role === 'user' 
+                                ? "bg-chatta-darker border border-white/10" 
+                                : "bg-chatta-purple/20 border border-chatta-purple/30"
+                            )}
+                          >
+                            <p className="whitespace-pre-wrap">{message.content}</p>
+                            
+                            {message.attachments && message.attachments.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {message.attachments.map((attachment) => (
+                                  <Badge 
+                                    key={attachment.url} 
+                                    className="bg-chatta-darker text-gray-300 border border-gray-700"
+                                  >
+                                    {attachment.name}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div 
+                            className={`text-xs text-gray-500 mt-1 ${
+                              message.role === 'user' ? 'text-right' : 'text-left'
+                            }`}
+                          >
+                            {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          </div>
+                        </div>
+                        
+                        {message.role === 'user' && (
+                          <Avatar className="h-8 w-8 ml-3 mt-1 order-2">
+                            <AvatarImage src="" />
+                            <AvatarFallback className="bg-gray-700 text-gray-300">U</AvatarFallback>
+                          </Avatar>
+                        )}
+                      </motion.div>
+                    ))
                   )}
-                </div>
+                </AnimatePresence>
+                
+                {/* Typing indicator */}
+                {isGenerating && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center gap-2 text-gray-400 mb-4"
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src="/lovable-uploads/efb222f9-a554-47a3-8b66-d5cfd2bf27b6.png" alt="Chatta" />
+                      <AvatarFallback className="bg-gradient-to-br from-chatta-purple to-chatta-cyan text-white">CH</AvatarFallback>
+                    </Avatar>
+                    <div className="flex px-3 py-2 bg-chatta-purple/10 rounded-2xl">
+                      <span className="animate-pulse mr-1">●</span>
+                      <span className="animate-pulse animation-delay-200 mr-1">●</span>
+                      <span className="animate-pulse animation-delay-400">●</span>
+                    </div>
+                  </motion.div>
+                )}
               </div>
               
-              {/* Quick commands - centered with max width */}
+              {/* Quick commands - only show when messages exist */}
               {messages.length > 0 && (
-                <div className="px-4 pt-2 flex justify-center">
-                  <div className="w-full max-w-[720px]">
-                    <div className="flex flex-wrap gap-2">
-                      {quickCommands.map((cmd) => (
-                        <button
-                          key={cmd.action}
-                          onClick={() => handleQuickCommand(cmd.action)}
-                          className="text-sm px-3 py-1 rounded-full 
-                            bg-chatta-purple/10 border border-chatta-purple/30 
-                            hover:bg-chatta-purple/20 transition-all 
-                            focus:outline-none focus:ring-2 focus:ring-chatta-purple/50"
-                        >
-                          {cmd.label}
-                        </button>
-                      ))}
-                    </div>
+                <div className="px-4 pt-2">
+                  <div className="flex flex-wrap gap-2">
+                    {quickCommands.map((cmd) => (
+                      <button
+                        key={cmd.action}
+                        onClick={() => handleQuickCommand(cmd.action)}
+                        className="text-sm px-3 py-1 rounded-full 
+                          bg-chatta-purple/10 border border-chatta-purple/30 
+                          hover:bg-chatta-purple/20 transition-all 
+                          focus:outline-none focus:ring-2 focus:ring-chatta-purple/50"
+                      >
+                        {cmd.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
               
-              {/* Input area - centered with max width */}
-              <div className="p-4 flex justify-center">
-                <div className="w-full max-w-[720px]">
-                  <PureMultimodalInput 
-                    chatId={chatId}
-                    messages={messages}
-                    attachments={attachments}
-                    setAttachments={setAttachments}
-                    onSendMessage={handleSendMessage}
-                    onStopGenerating={handleStopGenerating}
-                    isGenerating={isGenerating}
-                    canSend={true}
-                    selectedVisibilityType="private"
-                    className="bg-chatta-darker border-chatta-purple/20 focus-within:border-chatta-purple/50 focus-within:glow-sm"
-                  />
-                </div>
+              {/* Input area */}
+              <div className="p-4">
+                <PureMultimodalInput 
+                  chatId={chatId}
+                  messages={messages}
+                  attachments={attachments}
+                  setAttachments={setAttachments}
+                  onSendMessage={handleSendMessage}
+                  onStopGenerating={handleStopGenerating}
+                  isGenerating={isGenerating}
+                  canSend={true}
+                  selectedVisibilityType="private"
+                  className="bg-chatta-darker border-chatta-purple/20 focus-within:border-chatta-purple/50 focus-within:glow-sm"
+                />
               </div>
             </div>
           ) : (
@@ -326,7 +323,7 @@ const Chat = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="text-center max-w-[600px] w-full px-6 py-8"
+                className="text-center w-full px-6 py-8"
               >
                 <img 
                   src="/lovable-uploads/ac4cd6a8-b121-475a-9021-d930c27581e3.png" 
