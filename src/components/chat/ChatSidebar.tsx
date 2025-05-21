@@ -22,15 +22,28 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
     { icon: Settings, label: "Settings", route: "/settings", active: path === "/settings" },
   ];
   
+  // Helper function to handle navigation and close sidebar on mobile
+  const handleNavigation = (route: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+    navigate(route);
+    if (onClose) onClose();
+  };
+  
   return (
     <div className="w-[260px] border-r border-chatta-purple/20 h-screen flex flex-col bg-gradient-to-b from-chatta-darker to-chatta-dark">
       {/* Header with logo */}
       <div className="p-4 border-b border-chatta-purple/20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Link to="/" className="cursor-pointer">
+            <a 
+              href="/" 
+              onClick={(e) => handleNavigation('/', e)}
+              className="cursor-pointer"
+            >
               <img src="/lovable-uploads/4e3faff9-aeeb-4667-84fe-6c0002c1fca1.png" alt="Chatta" className="h-9" />
-            </Link>
+            </a>
           </div>
           
           {onClose && (
@@ -54,9 +67,9 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1, duration: 0.3 }}
             >
-              <Link
-                to={item.route}
-                onClick={onClose}
+              <a
+                href={item.route}
+                onClick={(e) => handleNavigation(item.route, e)}
                 className={cn(
                   "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all cursor-pointer",
                   item.active 
@@ -66,7 +79,7 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
               >
                 <item.icon size={18} className={item.active ? "text-chatta-purple" : ""} />
                 <span>{item.label}</span>
-              </Link>
+              </a>
             </motion.li>
           ))}
         </ul>
@@ -81,14 +94,14 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
             "Portfolio Review"
           ].map((chat, index) => (
             <li key={index}>
-              <Link
-                to="/chat"
-                onClick={onClose}
+              <a
+                href="/chat"
+                onClick={(e) => handleNavigation('/chat', e)}
                 className="text-gray-400 hover:text-white text-sm flex items-center gap-2 px-2 py-1.5 rounded hover:bg-chatta-purple/10 cursor-pointer"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-chatta-cyan"></span>
                 {chat}
-              </Link>
+              </a>
             </li>
           ))}
         </ul>
@@ -99,10 +112,7 @@ const ChatSidebar = ({ onClose }: ChatSidebarProps) => {
         <Button 
           variant="chatta" 
           className="w-full text-sm font-medium"
-          onClick={() => {
-            navigate("/chat");
-            if (onClose) onClose();
-          }}
+          onClick={() => handleNavigation('/chat')}
         >
           New Chat
         </Button>
