@@ -274,23 +274,25 @@ const Chat = () => {
                 )}
               </div>
               
-              {/* Quick commands */}
-              <div className="px-4 pt-2 max-w-[800px] mx-auto w-full">
-                <div className="flex flex-wrap gap-2">
-                  {quickCommands.map((cmd) => (
-                    <button
-                      key={cmd.action}
-                      onClick={() => handleQuickCommand(cmd.action)}
-                      className="text-sm px-3 py-1 rounded-full 
-                        bg-chatta-purple/10 border border-chatta-purple/30 
-                        hover:bg-chatta-purple/20 transition-all 
-                        focus:outline-none focus:ring-2 focus:ring-chatta-purple/50"
-                    >
-                      {cmd.label}
-                    </button>
-                  ))}
+              {/* Quick commands - only show when messages exist */}
+              {messages.length > 0 && (
+                <div className="px-4 pt-2 max-w-[800px] mx-auto w-full">
+                  <div className="flex flex-wrap gap-2">
+                    {quickCommands.map((cmd) => (
+                      <button
+                        key={cmd.action}
+                        onClick={() => handleQuickCommand(cmd.action)}
+                        className="text-sm px-3 py-1 rounded-full 
+                          bg-chatta-purple/10 border border-chatta-purple/30 
+                          hover:bg-chatta-purple/20 transition-all 
+                          focus:outline-none focus:ring-2 focus:ring-chatta-purple/50"
+                      >
+                        {cmd.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
               
               {/* Input area */}
               <div className="p-4 max-w-[800px] mx-auto w-full">
@@ -342,4 +344,3 @@ const Chat = () => {
 };
 
 export default Chat;
-

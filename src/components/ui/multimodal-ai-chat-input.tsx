@@ -566,9 +566,8 @@ function PureMultimodalInput({
     resetHeight,
   ]);
 
-  // Modified condition: Don't show suggested actions when we have the quick commands in Chat.tsx
-  // This prevents duplicate action buttons
-  const showSuggestedActions = false; // Disabled because we have quick command buttons in Chat.tsx
+  // Changed this condition to show suggested actions when chat is empty
+  const showSuggestedActions = messages.length === 0 && attachments.length === 0 && uploadQueue.length === 0;
 
   const isAttachmentDisabled = isGenerating || uploadQueue.length > 0;
 
