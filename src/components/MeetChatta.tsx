@@ -68,8 +68,9 @@ const MeetChatta = () => {
             Meet <span className="gradient-text">Chatta</span>
           </h2>
           <p className="text-gray-400 max-w-2xl mx-auto">
-            Your AI assistant for Solana — built to launch tokens, analyze sentiment, 
-            and execute trades in seconds.
+            Your AI assistant for Solana — built to decode the chain, launch tokens, and execute on-chain with precision.
+            Chatta helps you swap, analyze, and deploy on Solana effortlessly. From sentiment to smart trades, it runs the terminal so you can focus on strategy.
+            Always live. Always learning. Always Solana-native.
           </p>
         </div>
         
