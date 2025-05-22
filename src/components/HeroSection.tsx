@@ -20,20 +20,13 @@ const HeroSection = () => {
           <p className="text-xl md:text-2xl text-gray-300 mb-8">
             Swap tokens, launch projects, track sentiment, and manage portfolios all through one chat.
           </p>
-          <div className="flex flex-wrap gap-4">
+          <div>
             <Button
               variant="chatta-gradient"
               size="chatta"
-              className="text-lg font-bold py-6"
+              className="text-lg font-bold py-5 w-48"
             >
               Start Chatting
-            </Button>
-            <Button
-              variant="chatta-secondary"
-              size="chatta"
-              className="text-lg font-bold py-6"
-            >
-              See Demo
             </Button>
           </div>
         </div>
