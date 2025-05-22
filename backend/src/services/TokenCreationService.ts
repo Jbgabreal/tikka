@@ -177,7 +177,7 @@ async function createTokenTransaction(
       mint
     };
   } else {
-    const data = await response.json();
+    const data = await response.json() as { signature: string };
     return { 
       unsignedTransaction: '', // Bonk doesn't return an unsigned transaction
       signature: data.signature,
@@ -190,6 +190,12 @@ export class TokenCreationService {
   // Multi-step chat flow for token creation
   async handleCreationIntent(message: string, context: any) {
     const userId = context.walletAddress || 'default';
+    const userInput = message.trim();
+    // Always handle cancel/abort first
+    if (userInput.toLowerCase() === 'cancel' || userInput.toLowerCase() === 'abort') {
+      delete tokenCreationSessions[userId];
+      return { prompt: 'Token creation cancelled.', step: null };
+    }
     // If the message is 'create token', reset the session
     if (message.trim().toLowerCase() === 'create token') {
       console.log('[DEBUG] Resetting token creation session for user:', userId);
@@ -197,7 +203,6 @@ export class TokenCreationService {
     }
     let session = tokenCreationSessions[userId] || { step: null };
     let { step } = session;
-    const userInput = message.trim();
 
     // If no step, this is the first call after reset: prompt for image and do NOT advance
     if (!step) {
@@ -207,12 +212,6 @@ export class TokenCreationService {
       const prompt = 'Please upload an image for your token.';
       console.log('[DEBUG] Returning step:', step, 'prompt:', prompt);
       return { prompt, step };
-    }
-
-    // Handle cancel
-    if (userInput.toLowerCase() === 'cancel' || userInput.toLowerCase() === 'abort') {
-      delete tokenCreationSessions[userId];
-      return { prompt: 'Token creation cancelled.', step: null };
     }
 
     // Handle back

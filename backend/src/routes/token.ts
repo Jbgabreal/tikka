@@ -1,8 +1,10 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { TokenPriceService } from '../services/TokenPriceService';
 import { TokenCreationService } from '../services/TokenCreationService';
 import { TokenSwapService } from '../services/TokenSwapService';
 import { TrendingService } from '../services/TrendingService';
+import { authMiddleware } from '../middlewares/authMiddleware';
+import { asyncHandler } from '../utils/asyncHandler';
 
 const router = Router();
 const priceService = new TokenPriceService();
@@ -29,14 +31,21 @@ router.post('/create', async (req, res) => {
   }
 });
 
-router.post('/swap', async (req, res) => {
+router.post('/chat/swap', authMiddleware, asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user?.wallet;
+  if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+  const { input } = req.body;
+  if (!input) return res.status(400).json({ error: 'Input is required' });
+
   try {
-    const result = await swapService.swapToken(req.body);
+    const result = await swapService.handleSwapIntent(input, { walletAddress: userId });
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: 'Token swap error', details: error?.toString() });
+    console.error('Error handling swap:', error);
+    res.status(500).json({ error: 'Failed to process swap request', details: error?.toString() });
   }
-});
+}));
 
 router.get('/trending', async (req, res) => {
   try {
