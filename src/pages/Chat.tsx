@@ -271,9 +271,9 @@ const Chat = () => {
       } else {
         if (currentStep !== undefined) {
           setMessages(prev => [...prev, {
-            id: `ai-${Date.now()}`,
+        id: `ai-${Date.now()}`,
             content: 'Unexpected response, please try again.',
-            role: 'assistant',
+        role: 'assistant',
           }]);
         } else {
           setCurrentStep(undefined);
@@ -282,7 +282,7 @@ const Chat = () => {
     } catch (e) {
       setMessages(prev => [...prev, { id: `err-${Date.now()}`, content: 'Error contacting backend', role: 'assistant' }]);
     }
-    setIsGenerating(false);
+      setIsGenerating(false);
     // Focus the chat input after sending
     if (chatInputRef.current) {
       chatInputRef.current.focus();
@@ -643,7 +643,14 @@ const Chat = () => {
           )}
           {/* Show sign transaction button if unsignedTx is present */}
           {unsignedTx && (
-            <div className="p-6 rounded-2xl border-2 border-chatta-purple bg-chatta-purple/10 shadow-lg flex flex-col items-center max-w-xl mx-auto my-6">
+            <div className="p-6 rounded-2xl border-2 border-chatta-purple bg-chatta-purple/10 shadow-lg flex flex-col items-center max-w-xl mx-auto my-6 relative">
+              <button
+                onClick={() => { setUnsignedTx(null); setPendingMint(null); }}
+                className="absolute top-2 right-2 text-chatta-cyan hover:text-chatta-purple text-xl font-bold focus:outline-none"
+                title="Close"
+              >
+                ×
+              </button>
               <div className="flex items-center gap-2 mb-2">
                 <AlertTriangle className="text-chatta-cyan" size={28} />
                 <span className="text-lg font-bold text-chatta-cyan">Signature Required</span>

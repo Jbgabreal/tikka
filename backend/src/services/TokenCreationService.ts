@@ -12,7 +12,6 @@ const RPC_ENDPOINT = process.env.SOLANA_RPC_ENDPOINT || "https://api.mainnet-bet
 const web3Connection = new Connection(RPC_ENDPOINT, 'confirmed');
 
 const TOKEN_CREATION_STEPS = [
-  'pool',
   'image',
   'name',
   'symbol',
@@ -20,6 +19,7 @@ const TOKEN_CREATION_STEPS = [
   'twitter',
   'telegram',
   'website',
+  'pool',
   'amount',
   'confirmation'
 ];
@@ -115,57 +115,21 @@ async function createTokenMetadata(
     }
     return data.metadataUri;
   } else if (pool === 'bonk') {
-    // --- Bonk flow: upload image to Bonk, then metadata to Bonk ---
-    const imgForm = new FormData();
-    imgForm.append("image", imageFile.buffer, {
-      filename: imageFile.originalname || 'image.png',
-      contentType: imageFile.mimetype || 'image/png'
-    });
-    const imgResponse = await fetch("https://nft-storage.letsbonk22.workers.dev/upload/img", {
+    const response = await fetch("https://nft-storage.letsbonk22.workers.dev/upload/meta", {
       method: "POST",
-      body: imgForm,
-      headers: imgForm.getHeaders(), // Only for Bonk
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        createdOn: "https://bonk.fun",
+        description,
+        image: imageFile.buffer.toString('base64'),
+        name,
+        symbol,
+        website
+      }),
     });
-    const imgText = await imgResponse.text();
-    console.log('[DEBUG] Bonk image upload raw response:', imgText);
-    let imgUri;
-    try {
-      const imgJson = JSON.parse(imgText);
-      if (imgJson.success && imgJson.url) {
-        imgUri = imgJson.url;
-      } else {
-        throw new Error('Bonk image upload failed: ' + imgText);
-      }
-    } catch {
-      imgUri = imgText; // fallback for plain URL
-    }
-    const metaBody = {
-      createdOn: "https://bonk.fun",
-      description,
-      image: imgUri,
-      name,
-      symbol,
-      ...(website && /^https?:\/\//.test(website) ? { website } : {})
-    };
-    const metaResponse = await fetch("https://nft-storage.letsbonk22.workers.dev/upload/meta", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(metaBody),
-    });
-    const metaText = await metaResponse.text();
-    console.log('[DEBUG] Bonk metadata upload response:', metaText);
-    let metadataUri;
-    try {
-      const metaJson = JSON.parse(metaText);
-      if (metaJson.success && metaJson.url) {
-        metadataUri = metaJson.url;
-      } else {
-        throw new Error('Bonk metadata upload failed: ' + metaText);
-      }
-    } catch {
-      metadataUri = metaText; // fallback for plain URL
-    }
-    return metadataUri;
+    return await response.text();
   }
   throw new Error('Invalid pool type');
 }
@@ -173,66 +137,31 @@ async function createTokenMetadata(
 async function createTokenTransaction(
   publicKey: string,
   tokenMetadata: any,
-  mintKeypairOrPubkey: any, // can be Keypair or string
+  mint: string,
   amount: number,
   pool: string
 ): Promise<{ unsignedTransaction: string, signature?: string, mint?: string }> {
-  const isBonk = pool === 'bonk';
-  const baseUrl = isBonk
-    ? `https://pumpportal.fun/api/trade?api-key=${process.env.PUMP_PORTAL_API_KEY}`
-    : 'https://pumpportal.fun/api/trade-local';
-
-  // For Bonk, mint must be the base58-encoded secret key
-  let mint;
-  if (isBonk) {
-    // If mintKeypairOrPubkey is a Keypair, encode its secretKey
-    if (typeof mintKeypairOrPubkey === 'object' && mintKeypairOrPubkey.secretKey) {
-      mint = bs58.encode(mintKeypairOrPubkey.secretKey);
-    } else {
-      mint = mintKeypairOrPubkey; // fallback
-    }
-  } else {
-    // For pump, use public key
-    if (typeof mintKeypairOrPubkey === 'object' && mintKeypairOrPubkey.publicKey) {
-      mint = mintKeypairOrPubkey.publicKey.toBase58();
-    } else {
-      mint = mintKeypairOrPubkey;
-    }
-  }
-
-  // For Bonk, do not include image in tokenMetadata
-  const tokenMetadataPayload = isBonk
-    ? {
-        name: tokenMetadata.name,
-        symbol: tokenMetadata.symbol,
-        uri: tokenMetadata.uri
-      }
-    : {
-        name: tokenMetadata.name,
-        symbol: tokenMetadata.symbol,
-        uri: tokenMetadata.uri,
-        image: tokenMetadata.image
-      };
-
+  const baseUrl = pool === 'pump' ? 'https://pumpportal.fun/api/trade-local' : 'https://pumpportal.fun/api/trade';
+  const apiKey = process.env.PUMP_PORTAL_API_KEY;
+  
   const payload = {
     publicKey,
     action: "create",
-    tokenMetadata: tokenMetadataPayload,
+    tokenMetadata,
     mint,
     denominatedInSol: "true",
-    amount: Number(amount),
-    slippage: isBonk ? 5 : 0.5,
-    priorityFee: isBonk ? 0.00005 : 0,
+    amount,
+    slippage: 0.5,
+    priorityFee: 0,
     pool
   };
-  // Add debug log to show the exact payload for Pump Portal
-  console.log('[DEBUG] Pump Portal FINAL PAYLOAD:', JSON.stringify(payload, null, 2));
+  console.log('[DEBUG] Pump/BONK portal payload:', JSON.stringify(payload, null, 2));
 
   const response = await fetch(baseUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(process.env.PUMP_PORTAL_API_KEY && !isBonk ? { "api-key": process.env.PUMP_PORTAL_API_KEY } : {})
+      ...(apiKey && { "api-key": apiKey })
     },
     body: JSON.stringify(payload)
   });
@@ -241,15 +170,15 @@ async function createTokenTransaction(
     throw new Error(`Failed to create token: ${response.statusText}`);
   }
 
-  if (!isBonk) {
+  if (pool === 'pump') {
     const data = await response.arrayBuffer();
-    return {
+    return { 
       unsignedTransaction: Buffer.from(data).toString('base64'),
       mint
     };
   } else {
     const data = await response.json();
-    return {
+    return { 
       unsignedTransaction: '', // Bonk doesn't return an unsigned transaction
       signature: data.signature,
       mint
@@ -270,12 +199,12 @@ export class TokenCreationService {
     let { step } = session;
     const userInput = message.trim();
 
-    // If no step, this is the first call after reset: prompt for pool and do NOT advance
+    // If no step, this is the first call after reset: prompt for image and do NOT advance
     if (!step) {
-      step = 'pool';
+      step = 'image';
       session.step = step;
       tokenCreationSessions[userId] = session;
-      const prompt = 'Which pool would you like to use? (pump or bonk)';
+      const prompt = 'Please upload an image for your token.';
       console.log('[DEBUG] Returning step:', step, 'prompt:', prompt);
       return { prompt, step };
     }
@@ -295,57 +224,43 @@ export class TokenCreationService {
       return { prompt: `Going back. Please provide ${prevStep}.`, step: prevStep };
     }
 
-    // Validate the current step input
-    let processedInput = userInput;
-    if (["twitter", "telegram", "website"].includes(step) && userInput.trim().toLowerCase() === "skip") {
-      processedInput = '';
-    }
-    if (step === 'symbol') {
-      processedInput = userInput.trim().toUpperCase();
-    }
-    const validationError = validateStepInput(step, processedInput);
-    if (validationError) {
-      return { prompt: validationError, step };
-    }
+    // Start or continue session
+    if (!step) step = 'image';
 
-    // Store the input in the session
-    session[step] = processedInput;
-    tokenCreationSessions[userId] = session;
-
-    // Special handling for pool step: advance immediately to image
-    if (step === 'pool') {
-      // Normalize and store pool
-      const poolValue = userInput.trim().toLowerCase();
-      if (!['pump', 'bonk'].includes(poolValue)) {
-        return { prompt: 'Pool must be either "pump" or "bonk".', step };
+    // Save input for current step
+    if (step) {
+      if (["twitter", "telegram", "website"].includes(step) && userInput.trim().toLowerCase() === "skip") {
+        session[step] = '';
+      } else if (step === 'symbol') {
+        session[step] = userInput.trim().toUpperCase();
+      } else if (step === 'amount') {
+        session[step] = Number(userInput);
+      } else {
+        session[step] = userInput;
       }
-      session.pool = poolValue;
-      session.step = 'image';
-      tokenCreationSessions[userId] = session;
-      return {
-        prompt: `Please upload an image for your token (${poolValue === 'pump' ? 'Pump' : 'Bonk'} flow).`,
-        step: 'image'
-      };
+      // Validate input (skip validation for socials if skipped)
+      let validationError = null;
+      if (["twitter", "telegram", "website"].includes(step) && userInput.trim().toLowerCase() === "skip") {
+        validationError = null;
+      } else {
+        validationError = validateStepInput(step, session[step]);
+      }
+      if (validationError) {
+        session.validationErrorCount = (session.validationErrorCount || 0) + 1;
+        tokenCreationSessions[userId] = session;
+        if (session.validationErrorCount >= 3) {
+          delete tokenCreationSessions[userId];
+          return { prompt: 'Token creation cancelled due to repeated invalid input. Please start again.', step: null };
+        }
+        return { prompt: validationError, step };
+      }
+      session.validationErrorCount = 0;
     }
 
-    // If the current step is 'image', only accept file uploads, not text
-    if (step === 'image') {
-      return { prompt: 'Please upload an image file to continue.', step: 'image' };
-    }
-
-    // Get the next step
+    // Advance to next step
     const nextStep = getNextStep(step);
     session.step = nextStep;
     tokenCreationSessions[userId] = session;
-
-    // Branch the flow based on the selected pool
-    if (nextStep === 'image') {
-      if (session.pool === 'pump') {
-        return { prompt: 'Please upload an image for your token (Pump flow).', step: nextStep };
-      } else if (session.pool === 'bonk') {
-        return { prompt: 'Please upload an image for your token (Bonk flow).', step: nextStep };
-      }
-    }
 
     // Only prompt for the next step, not the current one
     if (nextStep) {
@@ -359,7 +274,7 @@ export class TokenCreationService {
         case 'twitter': prompt = 'Twitter link? (must be a valid URL, or type "skip" to leave blank)'; break;
         case 'telegram': prompt = 'Telegram link? (must be a valid URL, or type "skip" to leave blank)'; break;
         case 'website': prompt = 'Website? (must be a valid URL, or type "skip" to leave blank)'; break;
-        case 'pool': prompt = 'Which pool would you like to use? (pump or bonk)'; break;
+        case 'pool': prompt = 'Which pool would you like to use? (pump)'; break;
         case 'confirmation': {
           // Create a summary of the token creation details
           const summary = `Please review your token details:\n` +
@@ -396,9 +311,7 @@ export class TokenCreationService {
             website: session.website,
             pool: session.pool,
             imageFile: session.imageFile,
-            publicKey: context.walletAddress,
-            bonkImageUrl: session.bonkImageUrl,
-            bonkMetadataUri: session.bonkMetadataUri
+            publicKey: context.walletAddress
           });
           delete tokenCreationSessions[userId];
           return { prompt: 'Token creation initiated successfully!', step: null, result };
@@ -425,54 +338,24 @@ export class TokenCreationService {
     if (!params.publicKey) {
       throw new Error('No publicKey provided for token creation.');
     }
-    let imageUri = null;
-    let metadataUri = null;
-    if (params.pool === 'bonk') {
-      // Upload metadata to Bonk now, using all collected fields and the Bonk image URL
-      const imgUri = params.bonkImageUrl;
-      const metaBody = {
-        createdOn: "https://bonk.fun",
-        description: params.description,
-        image: imgUri,
-        name: params.name,
-        symbol: params.symbol,
-        ...(params.website && /^https?:\/\//.test(params.website) ? { website: params.website } : {})
-      };
-      const metaResponse = await fetch("https://nft-storage.letsbonk22.workers.dev/upload/meta", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(metaBody),
-      });
-      const metaText = await metaResponse.text();
-      let bonkMetadataUri;
-      try {
-        const metaJson = JSON.parse(metaText);
-        if (metaJson.success && metaJson.url) {
-          bonkMetadataUri = metaJson.url;
-        } else {
-          throw new Error('Bonk metadata upload failed: ' + metaText);
-        }
-      } catch {
-        bonkMetadataUri = metaText;
-      }
-      imageUri = imgUri;
-      metadataUri = bonkMetadataUri;
-    } else {
-      // Pump flow (unchanged)
-      imageUri = await pinataUploadImageToIPFS(params.imageFile);
-      metadataUri = await createTokenMetadata(
-        params.name,
-        params.symbol,
-        params.description,
-        params.imageFile,
-        params.twitter || '',
-        params.telegram || '',
-        params.website || '',
-        params.pool
-      );
-    }
+    // Upload image to IPFS
+    const imageUri = await pinataUploadImageToIPFS(params.imageFile);
+
+    // Create token metadata
+    const metadataUri = await createTokenMetadata(
+      params.name,
+      params.symbol,
+      params.description,
+      params.imageFile,
+      params.twitter || '',
+      params.telegram || '',
+      params.website || '',
+      params.pool
+    );
+
     // Generate a random keypair for the mint
     const mintKeypair = Keypair.generate();
+
     // Create token transaction
     const result = await createTokenTransaction(
       params.publicKey,
@@ -482,89 +365,23 @@ export class TokenCreationService {
         uri: metadataUri,
         image: imageUri
       },
-      mintKeypair, // pass the Keypair, not just public key
+      mintKeypair.publicKey.toBase58(),
       params.amount,
       params.pool
     );
 
-    // If a signature is returned, check transaction status before returning success
-    if (result.signature) {
-      const connection = new Connection(process.env.SOLANA_RPC_ENDPOINT || 'https://api.mainnet-beta.solana.com', 'confirmed');
-      let confirmed = false;
-      try {
-        // Wait for confirmation (up to 20s)
-        for (let i = 0; i < 20; i++) {
-          const tx = await connection.getConfirmedTransaction(result.signature, 'confirmed');
-          if (tx && tx.meta && !tx.meta.err) {
-            confirmed = true;
-            break;
-          }
-          await new Promise(res => setTimeout(res, 1000));
-        }
-      } catch (e) {
-        // ignore
-      }
-      if (!confirmed) {
-        throw new Error('Token creation failed: Transaction was not confirmed. Please check your wallet balance and try again.');
-      }
-      return {
-        prompt: 'Token creation initiated successfully! Please sign and submit the transaction with your wallet.',
-        result: {
-          ...result,
-          mint: mintKeypair.publicKey.toBase58(),
-          explorerTemplate: 'https://solscan.io/tx/{signature}'
-        }
-      };
-    }
-    // For Pump, just return the result (user must sign)
-    return {
-      prompt: 'Token creation initiated successfully! Please sign and submit the transaction with your wallet.',
-      result: {
-        ...result,
-        mint: mintKeypair.publicKey.toBase58(),
-        explorerTemplate: 'https://solscan.io/tx/{signature}'
-      }
-    };
+    return result;
   }
 
   async handleImageUpload(file: Express.Multer.File, context: { walletAddress: string }) {
     const userId = context.walletAddress || 'default';
     let session = tokenCreationSessions[userId] || { step: 'image' };
-    // Handle image upload based on selected pool
-    if (session.pool === 'bonk') {
-      // Upload to Bonk and store the URL
-      const FormData = (await import('form-data')).default;
-      const imgForm = new FormData();
-      imgForm.append("image", file.buffer, {
-        filename: file.originalname || 'image.png',
-        contentType: file.mimetype || 'image/png'
-      });
-      const imgResponse = await fetch("https://nft-storage.letsbonk22.workers.dev/upload/img", {
-        method: "POST",
-        body: imgForm,
-        headers: imgForm.getHeaders(),
-      });
-      const imgText = await imgResponse.text();
-      console.log('[DEBUG] Bonk image upload raw response:', imgText);
-      let imgUri;
-      try {
-        const imgJson = JSON.parse(imgText);
-        if (imgJson.success && imgJson.url) {
-          imgUri = imgJson.url;
-        } else {
-          throw new Error('Bonk image upload failed: ' + imgText);
-        }
-      } catch {
-        imgUri = imgText;
-      }
-      session.bonkImageUrl = imgUri;
-      // Do NOT upload metadata here!
-    } else {
-      // For pump, store the file for later Pinata upload
-      session.imageFile = file;
-    }
+    
+    // Store the file buffer for later use
+    session.imageFile = file;
     session.step = 'name';
     tokenCreationSessions[userId] = session;
+    
     return {
       prompt: "Great! I've saved your token image. Now, please provide a name for your token.",
       step: 'name'

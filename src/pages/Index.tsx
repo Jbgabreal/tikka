@@ -1,8 +1,10 @@
 import React from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
-import MeetChatta from "@/components/MeetChatta";
-import FaqSection from "@/components/FaqSection";
+import HowItWorks from "@/components/HowItWorks";
+import FeaturesGrid from "@/components/FeaturesGrid";
+import LiveChatPreview from "@/components/LiveChatPreview";
+import TrustMetrics from "@/components/TrustMetrics";
 import CtaSection from "@/components/CtaSection";
 import Footer from "@/components/Footer";
 
@@ -13,12 +15,16 @@ const Index = () => {
       <div id="home">
         <HeroSection />
       </div>
-      <div id="meet-chatta">
-        <MeetChatta />
+      <div id="how-it-works">
+        <HowItWorks />
       </div>
-      <div id="faq">
-        <FaqSection />
+      <div id="features">
+        <FeaturesGrid />
       </div>
+      <div id="docs">
+        <LiveChatPreview />
+      </div>
+      <TrustMetrics />
       <CtaSection />
       <Footer />
     </div>
