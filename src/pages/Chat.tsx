@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PureMultimodalInput } from "@/components/ui/multimodal-ai-chat-input";
 import ChatSidebar from "@/components/chat/ChatSidebar";
@@ -6,8 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Wallet } from "lucide-react";
+import { Wallet, Copy, Clipboard, CheckCircle, AlertTriangle } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useConnection } from '@solana/wallet-adapter-react';
+import { sendChatMessage } from "@/services/api";
+import { VersionedTransaction } from '@solana/web3.js';
+import { Buffer } from 'buffer';
 
 interface Attachment {
   url: string;
@@ -70,10 +76,18 @@ const Chat = () => {
   const [chatId] = useState('main-chat');
   const [isMobile, setIsMobile] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
-  const [walletConnected, setWalletConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  
   const location = useLocation();
+  const { setVisible } = useWalletModal();
+  const { publicKey, connected, disconnect, signTransaction, sendTransaction } = useWallet();
+  const { connection } = useConnection();
+  const [copied, setCopied] = useState(false);
+  const [currentStep, setCurrentStep] = useState<string | undefined>(undefined);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
+  const [unsignedTx, setUnsignedTx] = useState<string | null>(null);
+  const [pendingMint, setPendingMint] = useState<string | null>(null);
+  const [copiedTx, setCopiedTx] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
   
   // Debug logs
   useEffect(() => {
@@ -90,35 +104,190 @@ const Chat = () => {
     console.log("Sidebar visibility state:", showSidebar);
   }, [showSidebar]);
 
-  const handleSendMessage = useCallback(({ input, attachments }: { input: string; attachments: Attachment[] }) => {
-    console.log("handleSendMessage called with:", { input, attachmentsCount: attachments.length });
-    
-    // Add user message to the messages array
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const handleSignAndSend = useCallback(async () => {
+    if (!unsignedTx) return;
+    try {
+      const txBuffer = Buffer.from(unsignedTx, 'base64');
+      const tx = VersionedTransaction.deserialize(txBuffer);
+      const signature = await sendTransaction(tx, connection);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `ai-${Date.now()}`,
+          content: `🎉 Token created successfully!\n${pendingMint ? `Mint: ${pendingMint}\n` : ''}[SOLSCAN_LINK]${signature}[/SOLSCAN_LINK]`,
+          role: 'assistant',
+        }
+      ]);
+      setUnsignedTx(null);
+      setPendingMint(null);
+    } catch (e: any) {
+      setMessages(prev => [...prev, {
+        id: `ai-${Date.now()}`,
+        content: `❌ Failed to sign/send transaction: ${e.message}`,
+        role: 'assistant',
+      }]);
+    }
+  }, [unsignedTx, signTransaction, sendTransaction, connection, pendingMint]);
+
+  const handleSendMessage = useCallback(async ({ input, attachments }: { input: string; attachments: Attachment[] }) => {
+    // For the 'image' step, only send if an image is attached, and do NOT add a user message to chat history
+    if (currentStep === 'image') {
+      if (!attachments.length) return; // Don't send if no image
+      // Add a user message with the image attachment
+      const userMessage: UIMessage = {
+        id: `user-${Date.now()}`,
+        content: '',
+        role: 'user',
+        attachments: [...attachments],
+      };
+      setMessages(prev => [...prev, userMessage]);
+      setIsGenerating(true);
+      try {
+        const response = await sendChatMessage('', {
+          messages,
+          attachments,
+          currentStep, // Pass currentStep so API knows to use file upload
+          walletAddress: publicKey?.toBase58(), // Pass wallet address for backend session
+        });
+        console.log('[DEBUG] Backend response (image step):', response);
+        if (response.prompt && typeof response.step !== 'undefined') {
+          setMessages(prev => [...prev, {
+            id: `ai-${Date.now()}`,
+            content: response.prompt,
+            role: 'assistant',
+          }]);
+          setCurrentStep(response.step); // This can be null (flow done) or a string (next step)
+        } else if (typeof response.step !== 'undefined') {
+          setCurrentStep(response.step);
+        } else {
+          // Only exit the flow if backend says step is null
+          if (currentStep !== undefined) {
+            setMessages(prev => [...prev, {
+              id: `ai-${Date.now()}`,
+              content: 'Unexpected response, please try again.',
+              role: 'assistant',
+            }]);
+            // Do NOT setCurrentStep(undefined) here!
+          } else {
+            setCurrentStep(undefined);
+          }
+        }
+      } catch (e) {
+        setMessages(prev => [...prev, { id: `err-${Date.now()}`, content: 'Error contacting backend', role: 'assistant' }]);
+      }
+      setIsGenerating(false);
+      // Focus the chat input after sending
+      if (chatInputRef.current) {
+        chatInputRef.current.focus();
+      }
+      return;
+    }
+    // For all other token creation steps, include walletAddress and currentStep in context
+    if (currentStep) {
+      if (!input.trim()) return; // Don't send empty text
+      const userMessage: UIMessage = {
+        id: `user-${Date.now()}`,
+        content: input,
+        role: 'user',
+        attachments: attachments.length > 0 ? [...attachments] : undefined,
+      };
+      setMessages(prev => [...prev, userMessage]);
+      setIsGenerating(true);
+      try {
+        const response = await sendChatMessage(input, {
+          messages,
+          currentStep,
+          walletAddress: publicKey?.toBase58(),
+        });
+        console.log('[DEBUG] Backend response:', response);
+        if (response.result?.unsignedTransaction) {
+          setUnsignedTx(response.result.unsignedTransaction);
+          setPendingMint(response.result.mint || null);
+          setMessages(prev => [...prev, {
+            id: `ai-${Date.now()}`,
+            content: `🚀 Unsigned transaction generated! Please sign with your wallet to complete token creation.`,
+            role: 'assistant',
+          }]);
+          setCurrentStep(undefined);
+          return;
+        } else if (response.prompt && typeof response.step !== 'undefined') {
+          setMessages(prev => [...prev, {
+            id: `ai-${Date.now()}`,
+            content: response.prompt,
+            role: 'assistant',
+          }]);
+          setCurrentStep(response.step);
+        } else if (typeof response.step !== 'undefined') {
+          setCurrentStep(response.step);
+        } else {
+          if (currentStep !== undefined) {
+            setMessages(prev => [...prev, {
+              id: `ai-${Date.now()}`,
+              content: 'Unexpected response, please try again.',
+              role: 'assistant',
+            }]);
+          } else {
+            setCurrentStep(undefined);
+          }
+        }
+      } catch (e) {
+        setMessages(prev => [...prev, { id: `err-${Date.now()}`, content: 'Error contacting backend', role: 'assistant' }]);
+      }
+      setIsGenerating(false);
+      // Focus the chat input after sending
+      if (chatInputRef.current) {
+        chatInputRef.current.focus();
+      }
+      return;
+    }
+    // For all other (non-token-creation) messages
+    if (!input.trim()) return; // Don't send empty text
     const userMessage: UIMessage = {
       id: `user-${Date.now()}`,
       content: input,
       role: 'user',
       attachments: attachments.length > 0 ? [...attachments] : undefined,
     };
-    
     setMessages(prev => [...prev, userMessage]);
-    
-    // Simulate AI responding
     setIsGenerating(true);
-    
-    setTimeout(() => {
-      // Add AI response
-      const aiMessage: UIMessage = {
-        id: `ai-${Date.now()}`,
-        content: `This is a simulated response to: "${input}"`,
-        role: 'assistant',
-      };
-      
-      setMessages(prev => [...prev, aiMessage]);
-      setIsGenerating(false);
-    }, 1500);
-    
-  }, []);
+    try {
+      const response = await sendChatMessage(input, { messages });
+      console.log('[DEBUG] Backend response:', response);
+      if (response.prompt && typeof response.step !== 'undefined') {
+        setMessages(prev => [...prev, {
+          id: `ai-${Date.now()}`,
+          content: response.prompt,
+          role: 'assistant',
+        }]);
+        setCurrentStep(response.step);
+      } else if (typeof response.step !== 'undefined') {
+        setCurrentStep(response.step);
+      } else {
+        if (currentStep !== undefined) {
+          setMessages(prev => [...prev, {
+            id: `ai-${Date.now()}`,
+            content: 'Unexpected response, please try again.',
+            role: 'assistant',
+          }]);
+        } else {
+          setCurrentStep(undefined);
+        }
+      }
+    } catch (e) {
+      setMessages(prev => [...prev, { id: `err-${Date.now()}`, content: 'Error contacting backend', role: 'assistant' }]);
+    }
+    setIsGenerating(false);
+    // Focus the chat input after sending
+    if (chatInputRef.current) {
+      chatInputRef.current.focus();
+    }
+  }, [messages, currentStep, publicKey]);
 
   const handleStopGenerating = useCallback(() => {
     console.log("Stopped generating");
@@ -154,14 +323,7 @@ const Chat = () => {
   }, [handleSendMessage]);
 
   const handleConnectWallet = () => {
-    // Simulate wallet connection
-    console.log("Connecting wallet...");
-    setTimeout(() => {
-      const mockWalletAddress = "8xF2...k9J3";
-      setWalletConnected(true);
-      setWalletAddress(mockWalletAddress);
-      console.log("Wallet connected:", mockWalletAddress);
-    }, 1000);
+    setVisible(true);
   };
 
   const handleToggleSidebar = () => {
@@ -243,10 +405,36 @@ const Chat = () => {
         <div className="w-full max-w-[720px] flex flex-col h-screen bg-gradient-to-b from-black/5 to-transparent backdrop-blur-sm relative z-10">
           {/* Header with wallet connection */}
           <div className="border-b border-chatta-purple/10 p-4 flex items-center justify-end">
-            {walletConnected ? (
+            {connected ? (
               <div className="flex items-center gap-2 bg-chatta-purple/10 px-3 py-1 rounded-full border border-chatta-purple/20">
                 <div className="w-2 h-2 rounded-full bg-chatta-cyan"></div>
-                <span className="text-sm text-gray-300">Wallet: {walletAddress}</span>
+                <span className="text-sm text-gray-300 flex items-center gap-1">
+                  Wallet: {publicKey ? `${publicKey.toBase58().slice(0, 4)}...${publicKey.toBase58().slice(-4)}` : ""}
+                  <button
+                    onClick={() => {
+                      if (publicKey) {
+                        navigator.clipboard.writeText(publicKey.toBase58());
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 1200);
+                      }
+                    }}
+                    className="ml-1 p-1 rounded hover:bg-chatta-purple/20 transition-colors"
+                    title="Copy address"
+                  >
+                    <Copy size={14} />
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await disconnect();
+                      setVisible(true);
+                    }}
+                    className="ml-1 px-2 py-1 rounded bg-chatta-purple/20 hover:bg-chatta-purple/40 text-xs transition-colors"
+                    title="To use a different Phantom account, disconnect, switch accounts in Phantom, then reconnect."
+                  >
+                    Change
+                  </button>
+                  {copied && <span className="ml-1 text-xs text-green-400">Copied!</span>}
+                </span>
               </div>
             ) : (
               <Button
@@ -262,10 +450,10 @@ const Chat = () => {
           </div>
           
           {/* Conditional content based on wallet connection */}
-          {walletConnected ? (
+          {connected ? (
             <div className="flex-1 flex flex-col overflow-hidden neo-blur">
               {/* Messages area with centered content */}
-              <div className="flex-1 overflow-y-auto p-4 md:p-6">
+              <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 md:p-6 scrollbar-hide">
                 <AnimatePresence>
                   {messages.length === 0 ? (
                     <motion.div 
@@ -307,7 +495,25 @@ const Chat = () => {
                                 : "bg-chatta-purple/20 border border-chatta-purple/30"
                             )}
                           >
-                            <p className="whitespace-pre-wrap">{message.content}</p>
+                            <p className="whitespace-pre-wrap">
+                              {typeof message.content === 'string'
+                                ? message.content.split('\n').map((line, i) =>
+                                    line.startsWith('[SOLSCAN_LINK]') && line.endsWith('[/SOLSCAN_LINK]')
+                                      ? (
+                                          <a
+                                            key={i}
+                                            href={`https://solscan.io/tx/${line.replace('[SOLSCAN_LINK]', '').replace('[/SOLSCAN_LINK]', '')}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-block mt-2 px-4 py-1 bg-chatta-cyan text-black font-semibold rounded-full hover:bg-chatta-purple transition-colors"
+                                          >
+                                            View on Solscan
+                                          </a>
+                                        )
+                                      : <span key={i}>{line}<br /></span>
+                                  )
+                                : message.content}
+                            </p>
                             
                             {message.attachments && message.attachments.length > 0 && (
                               <div className="mt-2 flex flex-wrap gap-2">
@@ -395,6 +601,8 @@ const Chat = () => {
                   canSend={true}
                   selectedVisibilityType="private"
                   className="bg-chatta-darker border-chatta-purple/20 focus-within:border-chatta-purple/50 focus-within:glow-sm"
+                  currentStep={currentStep}
+                  inputRef={chatInputRef}
                 />
               </div>
             </div>
@@ -431,6 +639,30 @@ const Chat = () => {
                   Connect Wallet
                 </Button>
               </motion.div>
+            </div>
+          )}
+          {/* Show sign transaction button if unsignedTx is present */}
+          {unsignedTx && (
+            <div className="p-6 rounded-2xl border-2 border-chatta-purple bg-chatta-purple/10 shadow-lg flex flex-col items-center max-w-xl mx-auto my-6">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className="text-chatta-cyan" size={28} />
+                <span className="text-lg font-bold text-chatta-cyan">Signature Required</span>
+              </div>
+              <div className="text-base text-white mb-4 text-center">
+                A transaction needs your signature to complete token creation.<br />
+                Please sign with your connected wallet to continue.
+              </div>
+              <Button
+                onClick={handleSignAndSend}
+                className="bg-chatta-cyan hover:bg-chatta-purple text-black font-bold px-6 py-2 rounded-full shadow"
+              >
+                <CheckCircle className="mr-2" size={18} /> Sign Transaction
+              </Button>
+              {pendingMint && (
+                <div className="mt-3 text-xs text-chatta-cyan">
+                  Mint: {pendingMint}
+                </div>
+              )}
             </div>
           )}
         </div>

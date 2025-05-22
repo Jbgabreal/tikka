@@ -1,0 +1,27 @@
+{
+  "name": "solana-ai-backend",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "nodemon src/index.ts",
+    "dev:doppler": "doppler run -- npm run dev",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@pinata/sdk": "^2.1.0",
+    "axios": "^1.6.7",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "multer": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.18",
+    "@types/express": "^4.17.21",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^20.17.50",
+    "nodemon": "^2.0.22",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.2.2"
+  }
+}

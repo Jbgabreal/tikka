@@ -25,6 +25,7 @@ interface Attachment {
   name: string;
   contentType: string;
   size: number;
+  file?: File;
 }
 
 interface UIMessage {
@@ -106,8 +107,8 @@ const Textarea = React.forwardRef<
   return (
     <textarea
       className={cn(
-        // Adjusted text color, placeholder color, and border/ring colors to grayscale
-        'flex min-h-[80px] w-full rounded-md border border-gray-400 bg-white px-3 py-2 text-base ring-offset-white placeholder:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm text-black', // Added text-black
+        // Use white background and black text, hide scrollbar
+        'flex min-h-[80px] w-full rounded-md border border-gray-400 bg-white px-3 py-2 text-base ring-offset-white placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chatta-purple focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm text-black scrollbar-hide',
         className,
       )}
       ref={ref}
@@ -402,6 +403,8 @@ interface MultimodalInputProps {
   canSend: boolean;
   className?: string;
   selectedVisibilityType: VisibilityType;
+  currentStep?: string;
+  inputRef?: React.RefObject<HTMLTextAreaElement>;
 }
 
 function PureMultimodalInput({
@@ -415,8 +418,10 @@ function PureMultimodalInput({
   canSend,
   className,
   selectedVisibilityType,
+  currentStep,
+  inputRef,
 }: MultimodalInputProps) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = inputRef || useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [input, setInput] = useState('');
@@ -462,6 +467,7 @@ function PureMultimodalInput({
             name: file.name,
             contentType: file.type || 'application/octet-stream',
             size: file.size,
+            file,
           };
           console.log(`MOCK: Upload successful for ${file.name}`);
           resolve(mockAttachment);
@@ -640,37 +646,46 @@ function PureMultimodalInput({
         </div>
       )}
 
-      <Textarea
-        data-testid="multimodal-input"
-        ref={textareaRef}
-        placeholder="Send a message..."
-        value={input}
-        onChange={handleInput}
-        className={cn(
-          'min-h-[24px] max-h-[calc(75dvh)] overflow-y-auto resize-none rounded-2xl !text-base pb-10',
-          'bg-gray-100 border border-gray-300', 
-          className,
-        )}
-        style={{color: 'black'}}
-        rows={1}
-        autoFocus
-        disabled={!canSend || isGenerating || uploadQueue.length > 0}
-        onKeyDown={(event) => {
-          if (
-            event.key === 'Enter' &&
-            !event.shiftKey &&
-            !event.nativeEvent.isComposing
-          ) {
-            event.preventDefault();
-
-            const canSubmit = canSend && !isGenerating && uploadQueue.length === 0 && (input.trim().length > 0 || attachments.length > 0);
-
-            if (canSubmit) {
+      {currentStep === 'image' ? (
+        <div className="flex flex-col items-center justify-center w-full">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            disabled={isAttachmentDisabled}
+            className="mb-2"
+          />
+          <Button
+            onClick={() => {
+              console.log('[DEBUG] Upload Image button clicked', { attachments });
+              if (attachments.length > 0) {
+                // Only call onSendMessage for image step here
+                onSendMessage({ input: '', attachments });
+                setAttachments([]);
+              }
+            }}
+            disabled={attachments.length === 0 || isGenerating}
+          >
+            Upload Image
+          </Button>
+        </div>
+      ) : (
+        <Textarea
+          ref={textareaRef}
+          value={input}
+          onChange={handleInput}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
               submitForm();
             }
-          }
-        }}
-      />
+          }}
+          placeholder="Send a message..."
+          rows={1}
+          disabled={currentStep === 'image'}
+          className="resize-none"
+        />
+      )}
 
       <div className="absolute bottom-0 left-0 p-2 w-fit flex flex-row justify-start z-10">
         <AttachmentsButton

@@ -1,4 +1,3 @@
-
 import { Home, User, Briefcase, FileText, MessageSquare, ExternalLink, Menu } from 'lucide-react'
 import { NavBar } from "@/components/ui/tubelight-navbar"
 import { Button } from "@/components/ui/button"

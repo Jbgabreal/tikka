@@ -171,3 +171,12 @@
   padding: 0;
   text-align: left;
 }
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
