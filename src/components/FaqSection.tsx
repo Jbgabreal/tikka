@@ -6,39 +6,39 @@ import { ChevronDown } from "lucide-react";
 const faqItems = [
   {
     question: "What is Chatta?",
-    answer: "Chatta is an AI Copilot for Solana that enables you to trade, track, and explore the blockchain through a simple chat interface. It helps both beginners and experienced users navigate the Solana ecosystem with ease."
+    answer: "Chatta is your Solana-native AI assistant. It lets you swap tokens, launch meme coins, track market sentiment, and analyze your portfolio — all through natural chat commands."
   },
   {
     question: "How much does Chatta cost?",
-    answer: "Chatta offers tiered pricing plans starting from a basic free tier. Premium features are available through subscription plans, with discounts for $CHTA token holders."
+    answer: "Chatta will be free for the first 24 hours after launch. After that, you'll need to hold $CHTA (Chatta's native token) to access core features."
   },
   {
     question: "What does $CHTA do?",
-    answer: "The $CHTA token powers the Chatta ecosystem. Token holders receive benefits including discounted subscription rates, premium features, governance rights, and early access to new features."
+    answer: "Holding $CHTA gives you real utility:\n\n• Unlocks core AI features like swaps, token creation, and analytics\n\n• Grants early access to upcoming tools and private models\n\n• Enables reduced fees on onchain transactions\n\n• Allows you to vote on new features through governance"
   },
   {
     question: "Is there a free version?",
-    answer: "Yes, Chatta offers a free tier with limited functionality that allows you to explore basic features. Premium features require a subscription or holding $CHTA tokens."
+    answer: "Yes — but only during the initial 24-hour launch window. After that, core features will require a $CHTA balance. We want to reward early adopters and real users."
   },
   {
     question: "Do I need to connect my wallet?",
-    answer: "While you can use basic Chatta features without connecting a wallet, connecting your Solana wallet unlocks the full functionality including trading, portfolio tracking, and $CHTA token benefits."
+    answer: "Yes, to use Chatta for onchain actions, you'll need to connect your Solana wallet. We are non-custodial — Chatta never asks for your seed phrase or holds your funds."
   },
   {
     question: "What chains does Chatta support?",
-    answer: "Currently, Chatta primarily supports the Solana blockchain. We're exploring integration with additional chains and L2 solutions in our future roadmap."
+    answer: "Only Solana. We're optimized for fast, low-fee execution and deep integration within the Solana ecosystem."
   },
   {
     question: "Can I launch tokens using Chatta?",
-    answer: "While Chatta doesn't directly support token launches yet, we provide insights and analytics that can help token creators. Full token launch functionality is on our roadmap for future releases."
+    answer: "Yes. Just say something like: Launch a meme token called BONKAI with 1B supply — and Chatta handles the rest."
   },
   {
     question: "Is Chatta safe to use?",
-    answer: "Yes, Chatta employs industry-standard security practices to protect user data and transactions. We never store your private keys, and all sensitive data is encrypted. However, always practice good security hygiene when using any blockchain tools."
+    answer: "Chatta is non-custodial and only performs transactions when you approve them in your wallet. You're always in control."
   },
   {
     question: "Can I build on top of Chatta?",
-    answer: "We plan to release a developer API that will allow integration with Chatta's capabilities. Join our developer community to stay updated on our API launch and partnership opportunities."
+    answer: "We're building a developer layer with custom plugins and skill extensions. Join early to experiment and build with our API + tools."
   }
 ];
 
@@ -63,7 +63,7 @@ const FaqSection = () => {
               <AccordionTrigger className="px-6 py-5 hover:no-underline">
                 <span className="text-left font-medium text-white text-lg">{item.question}</span>
               </AccordionTrigger>
-              <AccordionContent className="px-6 pb-5 text-chatta-gray">
+              <AccordionContent className="px-6 pb-5 text-chatta-gray whitespace-pre-line">
                 {item.answer}
               </AccordionContent>
             </AccordionItem>
