@@ -97,13 +97,6 @@ const FaqSection = () => {
               >
                 <AccordionTrigger className="py-6 text-left hover:no-underline">
                   <span className="text-lg font-medium">{item.question}</span>
-                  <div className="flex-shrink-0 ml-2">
-                    {openItem === item.id ? (
-                      <Minus className="h-5 w-5 text-chatta-purple" />
-                    ) : (
-                      <Plus className="h-5 w-5 text-gray-400" />
-                    )}
-                  </div>
                 </AccordionTrigger>
                 <AccordionContent className="pb-6">
                   <div className="text-gray-400">{item.answer}</div>
