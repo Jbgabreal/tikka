@@ -1,3 +1,4 @@
+import '../components/chat/ChatMarkdown.css';
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PureMultimodalInput } from "@/components/ui/multimodal-ai-chat-input";
@@ -14,6 +15,9 @@ import { useConnection } from '@solana/wallet-adapter-react';
 import { sendChatMessage } from "@/services/api";
 import { VersionedTransaction } from '@solana/web3.js';
 import { Buffer } from 'buffer';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 
 interface Attachment {
   url: string;
@@ -31,9 +35,9 @@ interface UIMessage {
 
 // Quick command options - updated to match the suggested prompts
 const quickCommands = [
-  { label: "Swap $SOL to $BONK", action: "swap" },
+  { label: "Swap Tokens", action: "swap" },
   { label: "Launch TOKEN", action: "launch" },
-  { label: "Trending on Solana", action: "trending" },
+  { label: "Trending Tokens", action: "trending" },
   { label: "My Portfolio", action: "portfolio" },
 ];
 
@@ -65,6 +69,41 @@ const AmbientBackground = () => {
       
       {/* Secondary glow */}
       <div className="absolute top-1/3 right-0 w-72 h-72 bg-chatta-cyan/5 blur-[80px] rounded-full" />
+    </div>
+  );
+};
+
+// TokenRow component for trending tokens and portfolio
+const TokenRow = ({ image, symbol, price, solscanUrl, mint, balance, balanceUsd }) => {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(mint);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1200);
+  };
+  return (
+    <div className="token-row">
+      <img src={image} alt={symbol} />
+      <div className="token-info">
+        <div className="token-symbol">{symbol}</div>
+        <div className="token-price">
+          ${price} <a href={solscanUrl} target="_blank" rel="noopener noreferrer">View on Solscan</a>
+        </div>
+        {typeof balance !== 'undefined' && (
+          <div className="token-balance">
+            <span>Balance: {balance} {symbol}</span>
+            {typeof balanceUsd !== 'undefined' && (
+              <span className="token-balance-usd"> (${balanceUsd.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} USD)</span>
+            )}
+          </div>
+        )}
+        <div className="token-mint">
+          <span className="mint-address">{mint}</span>
+          <button className="copy-btn" onClick={handleCopy} title="Copy mint address">
+            {copied ? "Copied!" : "Copy"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
@@ -229,30 +268,20 @@ const Chat = () => {
           }]);
           setCurrentStep(undefined);
           return;
-        } else if (response.prompt && typeof response.step !== 'undefined') {
+        }
+        if (response.prompt) {
           setMessages(prev => [...prev, {
             id: `ai-${Date.now()}`,
             content: response.prompt,
             role: 'assistant',
           }]);
-          // Always set currentStep to the backend's step, even if it's 'confirmation'
+        }
+        if (typeof response.step !== 'undefined') {
           setCurrentStep(response.step);
           console.log('[DEBUG] Updated currentStep:', response.step);
-        } else if (typeof response.step !== 'undefined') {
-          setCurrentStep(response.step);
-          console.log('[DEBUG] Updated currentStep:', response.step);
-        } else {
-          if (currentStep !== undefined) {
-            setMessages(prev => [...prev, {
-              id: `ai-${Date.now()}`,
-              content: 'Unexpected response, please try again.',
-              role: 'assistant',
-            }]);
-            // Do NOT setCurrentStep(undefined) here!
           } else {
             setCurrentStep(undefined);
             console.log('[DEBUG] Updated currentStep: undefined');
-          }
         }
       } catch (e) {
         setMessages(prev => [...prev, { id: `err-${Date.now()}`, content: 'Error contacting backend', role: 'assistant' }]);
@@ -283,28 +312,19 @@ const Chat = () => {
       console.log('[DEBUG] Sending chat message:', { input, payload });
       const response = await sendChatMessage(input, payload);
       console.log('[DEBUG] Backend response:', response);
-      if (response.prompt && typeof response.step !== 'undefined') {
+      if (response.prompt) {
         setMessages(prev => [...prev, {
           id: `ai-${Date.now()}`,
           content: response.prompt,
           role: 'assistant',
         }]);
+      }
+      if (typeof response.step !== 'undefined') {
         setCurrentStep(response.step);
         console.log('[DEBUG] Updated currentStep:', response.step);
-      } else if (typeof response.step !== 'undefined') {
-        setCurrentStep(response.step);
-        console.log('[DEBUG] Updated currentStep:', response.step);
-      } else {
-        if (currentStep !== undefined) {
-          setMessages(prev => [...prev, {
-            id: `ai-${Date.now()}`,
-            content: 'Unexpected response, please try again.',
-            role: 'assistant',
-          }]);
         } else {
           setCurrentStep(undefined);
           console.log('[DEBUG] Updated currentStep: undefined');
-        }
       }
     } catch (e) {
       setMessages(prev => [...prev, { id: `err-${Date.now()}`, content: 'Error contacting backend', role: 'assistant' }]);
@@ -328,13 +348,13 @@ const Chat = () => {
     
     switch(command) {
       case "swap":
-        commandMessage = "Swap 5 $SOL to $BONK";
+        commandMessage = "Swap Tokens";
         break;
       case "launch":
         commandMessage = "Launch a meme token";
         break;
       case "trending":
-        commandMessage = "What's trending on Solana right now?";
+        commandMessage = "Trending tokens";
         break;
       case "portfolio":
         commandMessage = "Show my portfolio";
@@ -522,25 +542,64 @@ const Chat = () => {
                                 : "bg-chatta-purple/20 border border-chatta-purple/30"
                             )}
                           >
-                            <p className="whitespace-pre-wrap">
-                              {typeof message.content === 'string'
-                                ? message.content.split('\n').map((line, i) =>
-                                    line.startsWith('[SOLSCAN_LINK]') && line.endsWith('[/SOLSCAN_LINK]')
-                                      ? (
-                                          <a
-                                            key={i}
-                                            href={`https://solscan.io/tx/${line.replace('[SOLSCAN_LINK]', '').replace('[/SOLSCAN_LINK]', '')}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-block mt-2 px-4 py-1 bg-chatta-cyan text-black font-semibold rounded-full hover:bg-chatta-purple transition-colors"
-                                          >
-                                            View on Solscan
-                                          </a>
-                                        )
-                                      : <span key={i}>{line}<br /></span>
-                                  )
-                                : message.content}
-                            </p>
+                            {message.role !== 'user' && Array.isArray(message.content) ? (
+                              // Directly render trending tokens as TokenRow components if content is an array
+                              message.content.map((token, idx) => (
+                                <TokenRow
+                                  key={token.mint || idx}
+                                  image={token.image}
+                                  symbol={token.symbol}
+                                  price={token.price}
+                                  solscanUrl={token.solscanUrl}
+                                  mint={token.mint}
+                                  balance={token.balance}
+                                  balanceUsd={token.balanceUsd}
+                                />
+                              ))
+                            ) : message.role !== 'user' && typeof message.content === 'string' && message.content.startsWith('{"prompt": [') ? (
+                              // Parse and render trending tokens as TokenRow components (legacy JSON string)
+                              (() => {
+                                try {
+                                  const parsed = JSON.parse(message.content);
+                                  if (parsed.prompt && Array.isArray(parsed.prompt)) {
+                                    return parsed.prompt.map((token, idx) => (
+                                      <TokenRow
+                                        key={token.mint || idx}
+                                        image={token.image}
+                                        symbol={token.symbol}
+                                        price={token.price}
+                                        solscanUrl={token.solscanUrl}
+                                        mint={token.mint}
+                                        balance={token.balance}
+                                        balanceUsd={token.balanceUsd}
+                                      />
+                                    ));
+                                  }
+                                } catch (e) {}
+                                // fallback to markdown if not a trending tokens list
+                                return (
+                                  <div className="markdown-body">
+                                    <ReactMarkdown
+                                      remarkPlugins={[remarkGfm]}
+                                      rehypePlugins={[rehypeRaw]}
+                                    >
+                                      {message.content}
+                                    </ReactMarkdown>
+                                  </div>
+                                );
+                              })()
+                            ) : message.role !== 'user' ? (
+                              <div className="markdown-body">
+                                <ReactMarkdown
+                                  remarkPlugins={[remarkGfm]}
+                                  rehypePlugins={[rehypeRaw]}
+                                >
+                                  {message.content}
+                                </ReactMarkdown>
+                              </div>
+                            ) : (
+                              <p className="whitespace-pre-wrap">{message.content}</p>
+                            )}
                             
                             {message.attachments && message.attachments.length > 0 && (
                               <div className="mt-2 flex flex-wrap gap-2">

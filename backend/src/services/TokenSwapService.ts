@@ -6,6 +6,15 @@ export const swapSessions: Record<string, any> = {};
 const SWAP_STEPS = ['fromToken', 'toToken', 'amount', 'confirmation'];
 const SOL_MINT = 'So11111111111111111111111111111111111111112';
 
+// Add popular tokens mapping
+const POPULAR_TOKENS = [
+  { symbol: 'SOL', name: 'Solana', mint: 'So11111111111111111111111111111111111111112' },
+  { symbol: 'USDT', name: 'Tether', mint: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB' },
+  { symbol: 'USDC', name: 'USD Coin', mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' },
+  { symbol: 'BONK', name: 'Bonk', mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263' },
+  // Add more as needed
+];
+
 function getNextStep(currentStep: string | null) {
   if (!currentStep) return SWAP_STEPS[0];
   const idx = SWAP_STEPS.indexOf(currentStep);
@@ -37,6 +46,19 @@ function validateSwapStepInput(step: string, input: any): string | null {
     default:
       return null;
   }
+}
+
+function resolveTokenMint(input: string): string | null {
+  const normalized = input.trim().toLowerCase();
+  // Check by mint
+  if (POPULAR_TOKENS.some(t => t.mint === input)) return input;
+  // Check by symbol
+  const bySymbol = POPULAR_TOKENS.find(t => t.symbol.toLowerCase() === normalized);
+  if (bySymbol) return bySymbol.mint;
+  // Check by name
+  const byName = POPULAR_TOKENS.find(t => t.name.toLowerCase() === normalized);
+  if (byName) return byName.mint;
+  return null;
 }
 
 export class TokenSwapService {
@@ -77,6 +99,10 @@ export class TokenSwapService {
     if (step) {
       if (step === 'amount') {
         session[step] = Number(userInput);
+      } else if (step === 'fromToken' || step === 'toToken') {
+        // Try to resolve symbol/name/mint
+        const resolved = resolveTokenMint(userInput);
+        session[step] = resolved || userInput;
       } else {
         session[step] = userInput;
       }

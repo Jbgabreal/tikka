@@ -1,10 +1,13 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Send, Paperclip } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import './ChatMarkdown.css';
 
 interface ChatMessage {
   id: string;
@@ -14,51 +17,62 @@ interface ChatMessage {
 }
 
 const ChatWindow = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: "1",
-      content: "Hello! I'm Chatta, your AI assistant for Solana. How can I help you today?",
-      isUser: false,
-    },
-    {
-      id: "2",
-      content: "Analyze my portfolio",
-      isUser: true,
-    },
-    {
-      id: "3",
-      content: "What would you like to do?",
-      isUser: false,
-      options: ["Swap tokens", "Launch tokens", "Analyze market", "View portfolio"]
-    }
-  ]);
-  
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const bottomRef = useRef<HTMLDivElement>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    console.log("Updated messages:", messages);
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
     
-    // Add user message
+    console.log("handleSubmit called with:", newMessage);
+
     const userMsg = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       content: newMessage,
       isUser: true,
     };
-    
     setMessages(prev => [...prev, userMsg]);
     setNewMessage("");
     
-    // Simulate AI response (would be replaced with actual API call)
-    setTimeout(() => {
-      const botMsg = {
-        id: (Date.now() + 1).toString(),
-        content: "I'm processing your request...",
-        isUser: false,
-      };
-      setMessages(prev => [...prev, botMsg]);
-    }, 1000);
+    try {
+      console.log("About to fetch...");
+      const response = await fetch("/api/chat/message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: newMessage,
+          context: {
+            // Add walletAddress or other context if needed
+          }
+        }),
+      });
+      console.log("Fetch complete, about to parse JSON...");
+      const data = await response.json();
+      console.log("Received data from backend:", data);
+      const content = data.prompt || data.response || data.error || data.content || "No response from assistant.";
+      setMessages([
+        { id: crypto.randomUUID(), content: "USER: " + newMessage, isUser: true },
+        { id: crypto.randomUUID(), content: "BOT: " + content, isUser: false }
+      ]);
+    } catch (err) {
+      console.error("Error in handleSubmit:", err);
+      setMessages(prev => [
+        ...prev,
+        { id: crypto.randomUUID(), content: "Error contacting backend.", isUser: false }
+      ]);
+    }
   };
+
+  // Debug log for messages before rendering
+  console.log("Rendering messages:", messages);
 
   return (
     <div className="flex flex-col h-screen w-full">
@@ -77,7 +91,11 @@ const ChatWindow = () => {
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full px-4 py-4">
           <div className="space-y-6">
-            {messages.map(msg => (
+            {messages.map(msg => {
+              console.log("Rendering message:", msg);
+              // Always render all messages, even if content is empty or step is undefined
+              const displayContent = msg.content && msg.content.trim() ? msg.content : '[No content]';
+              return (
               <div 
                 key={msg.id}
                 className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'} gap-3`}
@@ -99,7 +117,19 @@ const ChatWindow = () => {
                         : 'bg-chatta-purple/10 border border-chatta-purple/20'
                     }`}
                   >
-                    <p>{msg.content}</p>
+                      {/* Render Markdown for assistant messages, plain text for user */}
+                      {msg.isUser ? (
+                        <p>{displayContent}</p>
+                      ) : (
+                        <div className="markdown-body">
+                          <ReactMarkdown 
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeRaw]}
+                          >
+                            {displayContent}
+                          </ReactMarkdown>
+                        </div>
+                      )}
                   </div>
                   
                   {msg.options && (
@@ -124,7 +154,9 @@ const ChatWindow = () => {
                   </Avatar>
                 )}
               </div>
-            ))}
+              );
+            })}
+            <div ref={bottomRef} />
           </div>
         </ScrollArea>
       </div>

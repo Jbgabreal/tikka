@@ -3,6 +3,8 @@ import { TokenPriceService } from '../services/TokenPriceService';
 import { TokenCreationService } from '../services/TokenCreationService';
 import { TokenSwapService } from '../services/TokenSwapService';
 import { TrendingService } from '../services/TrendingService';
+import { UserPortfolioService } from '../services/UserPortfolioService';
+import { MoralisTestService } from '../services/MoralisTestService';
 import { authMiddleware } from '../middlewares/authMiddleware';
 import { asyncHandler } from '../utils/asyncHandler';
 
@@ -11,16 +13,50 @@ const priceService = new TokenPriceService();
 const creationService = new TokenCreationService();
 const swapService = new TokenSwapService();
 const trendingService = new TrendingService();
+const portfolioService = new UserPortfolioService();
+const moralisTestService = new MoralisTestService();
 
-router.post('/price', async (req, res) => {
+router.post('/price', asyncHandler(async (req: Request, res: Response) => {
   const { tokenAddress } = req.body;
-  try {
-    const price = await priceService.getPrice(tokenAddress);
-    res.json(price);
-  } catch (error) {
-    res.status(500).json({ error: 'Token price error', details: error?.toString() });
+  
+  if (!tokenAddress) {
+    return res.status(400).json({ error: 'Token address is required' });
   }
-});
+
+  try {
+    const priceInfo = await priceService.getTokenPriceWithMetadata(tokenAddress);
+    res.json(priceInfo);
+  } catch (error) {
+    console.error('Error fetching token price:', error);
+    
+    // Check if the error is due to uninitialized service
+    if (error instanceof Error && error.message === 'Price service is not initialized') {
+      return res.status(503).json({ 
+        error: 'Price service is currently unavailable',
+        message: 'Please ensure MORALIS_API_KEY is set in your environment variables'
+      });
+    }
+
+    res.status(500).json({ 
+      error: 'Failed to fetch token price', 
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+}));
+
+router.post('/portfolio', asyncHandler(async (req: Request, res: Response) => {
+  const { walletAddress } = req.body;
+  if (!walletAddress) {
+    return res.status(400).json({ error: 'Wallet address is required' });
+  }
+  try {
+    const result = await portfolioService.formatPortfolioForChat(walletAddress);
+    res.json({ message: result });
+  } catch (error) {
+    console.error('Error fetching portfolio:', error);
+    res.status(500).json({ error: 'Failed to fetch portfolio', details: error instanceof Error ? error.message : 'Unknown error' });
+  }
+}));
 
 router.post('/create', async (req, res) => {
   try {
@@ -56,5 +92,15 @@ router.get('/trending', async (req, res) => {
     res.status(500).json({ error: 'Trending error', details: error?.toString() });
   }
 });
+
+router.get('/moralis/test-price/:mint', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const { mint } = req.params;
+    const data = await moralisTestService.getTokenPrice(mint);
+    res.json(data);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+}));
 
 export default router; 

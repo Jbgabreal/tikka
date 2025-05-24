@@ -3,10 +3,20 @@ import dotenv from 'dotenv';
 import chatRoutes from './routes/chat';
 import tokenRoutes from './routes/token';
 import cors from 'cors';
+import trendingTokensRoutes from './routes/trendingTokens';
+import { moralisService } from './lib/moralis';
+import heliusTestRoute from './routes/heliusTest';
 
 dotenv.config();
 
 const app = express();
+
+// Initialize Moralis
+moralisService.initialize().catch(error => {
+  console.error('Failed to initialize Moralis:', error);
+  // Don't exit the process, just log the error
+  // The service will handle uninitialized state
+});
 
 app.use(express.json());
 const corsOrigin = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
@@ -17,5 +27,7 @@ app.use(cors({
 
 app.use('/api/chat', chatRoutes);
 app.use('/api/token', tokenRoutes);
+app.use('/api/trending-tokens', trendingTokensRoutes);
+app.use('/api/helius-test', heliusTestRoute);
 
 export default app; 
