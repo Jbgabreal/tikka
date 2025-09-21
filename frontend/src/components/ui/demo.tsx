@@ -29,7 +29,7 @@ export function PureMultimodalInputOnlyDisplay() {
     console.log("--- Simulating Sending Message ---");
     console.log("Input:", input);
     console.log("Attachments:", attachments);
-    console.log("---------------------------------");
+    console.log("------------A----------------------");
 
     setIsGenerating(true);
     setTimeout(() => {

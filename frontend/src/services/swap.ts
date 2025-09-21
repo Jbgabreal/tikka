@@ -13,7 +13,7 @@ export async function handleSwapStep(
       // Validate token input
       if (!input || input.length < 2) {
         return {
-          response: 'Please provide a valid token symbol or mint address.',
+          response: 'Please provide a valid token contract address or ticker.',
           step: 'fromToken'
         };
       }
@@ -22,7 +22,7 @@ export async function handleSwapStep(
       session.step = 'toToken';
       await setSwapSession(userId, session);
       return {
-        response: 'Which token do you want to swap to? (symbol or mint address)',
+        response: 'Which token do you want to swap to? (contract address or ticker)',
         step: 'toToken'
       };
 
@@ -30,7 +30,7 @@ export async function handleSwapStep(
       // Validate token input
       if (!input || input.length < 2) {
         return {
-          response: 'Please provide a valid token symbol or mint address.',
+          response: 'Please provide a valid token contract address or ticker.',
           step: 'toToken'
         };
       }

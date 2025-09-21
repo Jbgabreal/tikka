@@ -1,158 +1,90 @@
-
-import React, { useState } from "react";
-import { 
-  Accordion, 
-  AccordionContent, 
-  AccordionItem, 
-  AccordionTrigger 
-} from "@/components/ui/accordion";
-import { 
-  ArrowRight, 
-  Rocket, 
-  TrendingUp, 
-  ChartBar
-} from "lucide-react";
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Rocket, TrendingUp, BarChart3, Zap } from "lucide-react";
 
 const MeetChatta = () => {
-  // Default show first accordion item open
-  const [openItem, setOpenItem] = useState("item-0");
-  
-  // Sample chat interaction
-  const chatSample = [
-    { 
-      user: "Swap 5 SOL to BONK", 
-      response: "I found the best route for your swap:\n\n5 SOL ≈ 13,245,678 BONK\nRoute: Jupiter Aggregator\nSlippage: 0.5%\nPrice impact: 0.12%\n\nReady to execute?"
-    }
-  ];
-
-  // Capabilities list for the accordion
-  const capabilities = [
-    {
-      id: "item-0",
-      title: "Swap with Speed",
-      icon: <ArrowRight className="w-5 h-5 text-chatta-cyan" />,
-      description: "Just type your trade and it executes instantly on Solana. No complex interfaces or confusing charts—tell Chatta what you want and it handles the rest."
-    },
-    {
-      id: "item-1",
-      title: "Launch a Token",
-      icon: <Rocket className="w-5 h-5 text-chatta-purple" />,
-      description: "Create meme tokens or utilities in seconds. Chatta guides you through tokenomics, distribution, and listing—all through simple conversation."
-    },
-    {
-      id: "item-2",
-      title: "Analyze Portfolios",
-      icon: <ChartBar className="w-5 h-5 text-chatta-cyan" />,
-      description: "Get live performance metrics and risk breakdowns. Understand your positions at a glance with natural language summaries and actionable insights."
-    },
-    {
-      id: "item-3",
-      title: "Track Market Sentiment",
-      icon: <TrendingUp className="w-5 h-5 text-chatta-purple" />,
-      description: "Scan trending tokens, wallet flows, and social momentum. Chatta monitors on-chain activity and social signals to keep you ahead of market movements."
-    }
-  ];
-
   return (
-    <div className="py-20 bg-chatta-dark relative">
-      {/* Background elements */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/3 right-1/4 w-64 h-64 rounded-full bg-chatta-purple/10 filter blur-3xl"></div>
-        <div className="absolute bottom-1/3 left-1/4 w-48 h-48 rounded-full bg-chatta-cyan/10 filter blur-2xl"></div>
-      </div>
-      
-      <div className="container mx-auto px-4 relative z-10">
-        {/* Section header */}
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Meet <span className="gradient-text">Chatta</span>
+    <section id="meet-chatta" className="relative z-10 py-32 px-4">
+      <div className="container mx-auto">
+        <div className="text-center mb-20">
+          <h2 className="text-4xl md:text-6xl font-bold mb-8 gradient-text">
+            Meet Chatta
           </h2>
-          <p className="text-gray-400 max-w-2xl mx-auto">
-            Your AI assistant for Solana — built to decode the chain, launch tokens, and execute on-chain with precision.
-            Chatta helps you swap, analyze, and deploy on Solana effortlessly. From sentiment to smart trades, it runs the terminal so you can focus on strategy.
-            Always live. Always learning. Always Solana-native.
+          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-4xl mx-auto leading-relaxed">
+            Your AI-powered Solana assistant that understands natural language and executes blockchain operations with precision and speed.
           </p>
         </div>
         
-        {/* Two column layout */}
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
-          {/* Left column - Phone mockup */}
-          <div className="w-full lg:w-1/2 flex justify-center">
-            <div className="relative w-[280px] max-w-full animate-float">
-              {/* Phone frame */}
-              <div className="rounded-[40px] bg-chatta-darker border border-gray-800 p-3 shadow-xl shadow-chatta-purple/20">
-                {/* Phone screen */}
-                <div className="rounded-[32px] bg-chatta-dark border border-gray-700 overflow-hidden">
-                  {/* Status bar */}
-                  <div className="h-6 bg-black/30 flex items-center justify-between px-4">
-                    <div className="text-xs text-gray-400">9:41</div>
-                    <div className="flex items-center gap-1">
-                      <div className="h-2 w-2 rounded-full bg-chatta-cyan"></div>
-                      <div className="h-2 w-2 rounded-full bg-chatta-purple"></div>
+        <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center">
+          {/* Chat Preview */}
+          <div className="neo-card p-8 lg:p-10 rounded-3xl">
+            <div className="bg-gradient-to-r from-orange-500/20 to-pink-500/20 p-6 rounded-2xl mb-6">
+              <div className="flex items-center mb-4">
+                <div className="w-3 h-3 bg-green-400 rounded-full mr-3 animate-pulse"></div>
+                <span className="text-base font-medium text-gray-700 dark:text-gray-300">Chatta</span>
+              </div>
+              <p className="text-gray-800 dark:text-white text-base leading-relaxed">
+                I'll help you swap 5 SOL to BONK. Here's the best route:
+                <br /><br />
+                <span className="text-orange-600 dark:text-orange-400 font-medium">Route:</span> SOL → USDC → BONK<br />
+                <span className="text-orange-600 dark:text-orange-400 font-medium">Slippage:</span> 0.5%<br />
+                <span className="text-orange-600 dark:text-orange-400 font-medium">Price Impact:</span> 0.12%<br />
+                <span className="text-orange-600 dark:text-orange-400 font-medium">Estimated Output:</span> ~42,269,832 BONK
+              </p>
+            </div>
+            <div className="bg-gray-100/80 dark:bg-gray-800/80 rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50">
+              <p className="text-gray-800 dark:text-white font-medium mb-4 text-lg">Swap 5 SOL to BONK</p>
+              <div className="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-full w-4/5 bg-gradient-to-r from-orange-500 to-pink-500 animate-pulse rounded-full"></div>
+              </div>
                     </div>
                   </div>
                   
-                  {/* Chat content */}
-                  <div className="p-4 h-[480px]">
-                    <div className="text-xs text-gray-500 text-center mb-4">Today, 4:20 PM</div>
-                    
-                    {/* User message */}
-                    <div className="flex justify-end mb-3">
-                      <div className="bg-chatta-purple/30 rounded-xl rounded-tr-sm p-3 max-w-[80%]">
-                        <p className="text-sm">{chatSample[0].user}</p>
+          {/* Core Capabilities */}
+          <div className="space-y-8">
+            <div className="flex items-start space-x-6 p-6 neo-card rounded-2xl hover:scale-105 transition-transform duration-300">
+              <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl flex items-center justify-center">
+                <Rocket className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Swap with Speed</h3>
+                <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">Execute token swaps across multiple DEXs with optimal routing and minimal slippage.</p>
                       </div>
                     </div>
                     
-                    {/* Bot response */}
-                    <div className="flex justify-start mb-3">
-                      <div className="bg-gray-800/50 rounded-xl rounded-tl-sm p-3 max-w-[80%]">
-                        <p className="text-sm whitespace-pre-wrap">{chatSample[0].response}</p>
+            <div className="flex items-start space-x-6 p-6 neo-card rounded-2xl hover:scale-105 transition-transform duration-300">
+              <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-2xl flex items-center justify-center">
+                <Rocket className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Launch a Token</h3>
+                <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">Create and deploy new tokens with custom parameters and automated liquidity provision.</p>
                       </div>
                     </div>
                     
-                    {/* Action buttons */}
-                    <div className="flex gap-2 mt-4">
-                      <button className="bg-chatta-purple text-white text-xs rounded-full px-3 py-1.5 flex-1">
-                        Execute Swap
-                      </button>
-                      <button className="bg-gray-800 text-gray-300 text-xs rounded-full px-3 py-1.5 flex-1">
-                        Modify
-                      </button>
+            <div className="flex items-start space-x-6 p-6 neo-card rounded-2xl hover:scale-105 transition-transform duration-300">
+              <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-r from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center">
+                <BarChart3 className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Analyze Portfolios</h3>
+                <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">Get real-time insights into your portfolio performance, P&L, and asset allocation.</p>
                     </div>
                   </div>
+
+            <div className="flex items-start space-x-6 p-6 neo-card rounded-2xl hover:scale-105 transition-transform duration-300">
+              <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-2xl flex items-center justify-center">
+                <TrendingUp className="w-8 h-8 text-white" />
                 </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Track Market Sentiment</h3>
+                <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">Monitor social sentiment, trending tokens, and market movements in real-time.</p>
               </div>
-              
-              {/* Glow effect under phone */}
-              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 w-[180px] h-10 bg-chatta-purple/20 filter blur-xl rounded-full"></div>
             </div>
-          </div>
-          
-          {/* Right column - Accordion */}
-          <div className="w-full lg:w-1/2">
-            <Accordion type="single" collapsible value={openItem} onValueChange={setOpenItem} className="w-full">
-              {capabilities.map((capability, index) => (
-                <AccordionItem 
-                  key={capability.id} 
-                  value={capability.id}
-                  className="border-gray-700 hover:bg-gray-900/20 transition-colors rounded-md my-2"
-                >
-                  <AccordionTrigger className="py-4 px-4">
-                    <div className="flex items-center gap-3">
-                      {capability.icon}
-                      <span className="text-lg">{capability.title}</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4 text-gray-400">
-                    {capability.description}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 

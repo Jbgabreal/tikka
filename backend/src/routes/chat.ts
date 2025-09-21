@@ -1,147 +1,254 @@
 import { Router } from 'express';
+import { authMiddleware } from '../middlewares/authMiddleware';
+import { asyncHandler } from '../utils/asyncHandler';
 import { ChatService } from '../services/ChatService';
-import { TokenCreationService, tokenCreationSessions } from '../services/TokenCreationService';
-import multer, { Multer } from 'multer';
-import { Request } from 'express';
-import { TokenSwapService } from '../services/TokenSwapService';
-import trendingTokensService from '../services/trendingTokensService';
-import { UserPortfolioService } from '../services/UserPortfolioService';
+import { TokenCreationService } from '../services/TokenCreationService';
+import multer from 'multer';
 
 const router = Router();
-const chatService = new ChatService();
-const tokenCreationService = new TokenCreationService();
-const tokenSwapService = new TokenSwapService();
-const upload = multer();
-const userPortfolioService = new UserPortfolioService();
 
-// Utility to ensure { prompt: ... } structure
-function ensurePromptResponse(response: any): { prompt: string } {
-  if (response && typeof response === 'object' && 'prompt' in response) {
-    return response;
-  }
-  if (typeof response === 'string') {
-    return { prompt: response };
-  }
-  return { prompt: JSON.stringify(response) };
-}
+// Configure multer for file uploads
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
 
-router.post('/message', async (req, res) => {
+// Main chat endpoint with intent routing
+router.post('/message', authMiddleware, asyncHandler(async (req, res) => {
+  console.log('[CHAT] /message endpoint called');
+  console.log('[CHAT] Request body:', req.body);
+  console.log('[CHAT] User ID:', req.user?.id);
+  
+  const userId = req.user?.id;
+  if (!userId) {
+    console.log('[CHAT] No user ID, returning 401');
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+
   const { message, context } = req.body;
+  console.log('[CHAT] Message:', message);
+  console.log('[CHAT] Context:', context);
+  
   try {
-    console.log('[BACKEND] /api/chat/message received:', { message, context });
-    const userId = context?.walletAddress || 'default';
-    // If message is 'cancel' and activeFlow is set, route to the correct handler
-    if (typeof message === 'string' && message.trim().toLowerCase() === 'cancel' && context?.activeFlow) {
-      if (context.activeFlow === 'token-creation') {
-        const response = await tokenCreationService.handleCreationIntent('cancel', context || {});
-        return res.json(ensurePromptResponse(response));
-      } else if (context.activeFlow === 'swap') {
-        const response = await tokenSwapService.handleSwapIntent('cancel', context || {});
-        return res.json(ensurePromptResponse(response));
-      }
-    }
-    // Always check if the user is in a token creation session
-    const session = tokenCreationSessions[userId];
-    // Expanded intent triggers for token creation
-    const createTokenIntentRegex = /\b(create( a)?( new)? token|launch( a)?( new)? token|i want to launch( a)?( new)? token|i would like to create( a)?( new)? token|launch [a-z0-9_\- ]{2,50})\b/i;
-    // Expanded swap intent triggers
-    const swapIntentRegex = /\b(swap|swap [a-z0-9_\- ]+ to [a-z0-9_\- ]+|swap [a-z0-9_\- ]+ for [a-z0-9_\- ]+|i want to swap( tokens?)?|i will to swap( a)?( coin| token)?|swap my tokens?|swap my coin|swap coin|swap token|i want to swap for [a-z0-9_\- ]+|i want to swap [a-z0-9_\- ]+ for [a-z0-9_\- ]+|i would like to swap( tokens?)?)\b/i;
-    // Trending tokens intent regex
-    const trendingTokensIntentRegex = /(trending token|top tokens|best token|top 10 trending token|top 10 token|top trending|top \d+ tokens|top \d+ trending|top \d+ best|top \d+ coin|top \d+)/i;
-    // Portfolio intent regex
-    const portfolioIntentRegex = /(my portfolio|show my portfolio|wallet tokens|my tokens|portfolio balance|my solana portfolio)/i;
-    // Detect if user is in a swap session by currentStep
-    const swapSteps = ['fromToken', 'toToken', 'amount', 'confirmation'];
-    const swapSessionActive = context?.currentStep && swapSteps.includes(context.currentStep);
-
-    // Only start a flow if the message matches the intent
-    if (typeof message === 'string' && createTokenIntentRegex.test(message)) {
-      console.log('[BACKEND] Routing to: token creation (intent match)');
-      const response = await tokenCreationService.handleCreationIntent(message, context || {});
-      console.log('[BACKEND] Responding with:', response);
-      return res.json(ensurePromptResponse(response));
-    }
-    if (typeof message === 'string' && swapIntentRegex.test(message)) {
-      console.log('[BACKEND] Routing to: swap (intent match)');
-      const response = await tokenSwapService.handleSwapIntent(message, context || {});
-      console.log('[BACKEND] Responding with:', response);
-      return res.json(ensurePromptResponse(response));
-    }
-    if (typeof message === 'string' && trendingTokensIntentRegex.test(message)) {
-      console.log('[BACKEND] Routing to: trending tokens (intent match)');
-      // Extract top N if present
-      const topMatch = message.match(/top (\d+)/i);
-      let topN = 10;
-      if (topMatch && topMatch[1]) {
-        topN = parseInt(topMatch[1], 10);
-      } else if (/top 5/i.test(message)) {
-        topN = 5;
-      }
-      // Use the same service as /api/trending-tokens
-      let tokens = await trendingTokensService.getTrendingTokensWithDetails();
-      tokens = tokens
-        .filter(t => t.price && t.price > 0)
-        .sort((a, b) => (b.price ?? 0) - (a.price ?? 0))
-        .slice(0, topN);
-      // Return the array of token objects directly for frontend rendering
-      return res.json({ prompt: tokens });
-    }
-    if (typeof message === 'string' && portfolioIntentRegex.test(message)) {
-      console.log('[BACKEND] Routing to: user portfolio (intent match)');
-      const walletAddress = context?.walletAddress;
-      if (!walletAddress) {
-        return res.json(ensurePromptResponse('Please connect your wallet to view your portfolio.'));
-      }
-      try {
-        const tokens = await userPortfolioService.getUserPortfolioWithMetadata(walletAddress);
-        if (!tokens.length) {
-          return res.json(ensurePromptResponse('No tokens found in your wallet.'));
+    // Add wallet address to context if available
+    const enhancedContext = {
+      ...context,
+      userId,
+      walletAddress: context.walletAddress || context.wallet?.publicKey
+    };
+    
+    console.log('[CHAT] Enhanced context:', enhancedContext);
+    
+    let response: any;
+    
+    // Check if we're in a step flow - this takes priority over intent detection
+    if (enhancedContext.currentStep) {
+      console.log('[CHAT] Continuing step flow:', enhancedContext.currentStep);
+      
+      // Determine which service to route to based on the step
+      // Token creation steps (more specific, check first)
+      if (enhancedContext.currentStep === 'image' || enhancedContext.currentStep === 'name' || 
+          enhancedContext.currentStep === 'symbol' || enhancedContext.currentStep === 'description' ||
+          enhancedContext.currentStep === 'twitter' || enhancedContext.currentStep === 'telegram' ||
+          enhancedContext.currentStep === 'website' || enhancedContext.currentStep === 'pool' ||
+          enhancedContext.currentStep === 'amount' || enhancedContext.currentStep === 'confirmation') {
+        console.log('[CHAT] Routing to: token creation service (step continuation)');
+        const tokenCreationService = new TokenCreationService();
+        response = await tokenCreationService.handleCreationIntent(message, enhancedContext);
+        if (response) {
+          response.action = 'create-token';
         }
-        return res.json({ prompt: tokens });
-      } catch (e) {
-        return res.json(ensurePromptResponse('Failed to fetch your portfolio.'));
+      } else if (enhancedContext.currentStep === 'fromToken' || enhancedContext.currentStep === 'toToken') {
+        console.log('[CHAT] Routing to: swap service (step continuation)');
+        const { TokenSwapService } = require('../services/TokenSwapService');
+        const swapService = new TokenSwapService();
+        response = await swapService.handleSwapIntent(message, enhancedContext);
+        if (response) {
+          response.action = 'swap';
+        }
+      } else {
+        // Unknown step, fall back to general chat
+        console.log('[CHAT] Unknown step, falling back to general chat');
+        const chatService = new ChatService();
+        response = await chatService.chatWithOpenAI(message, enhancedContext);
       }
+    } else {
+      // No current step, do intent detection
+      console.log('[CHAT] No current step, doing intent detection');
+      const chatService = new ChatService();
+      response = await chatService.chatWithOpenAI(message, enhancedContext);
     }
-
-    // If a session is already active, continue the flow
-    if (session && session.step) {
-      console.log('[BACKEND] Routing to: token creation (session active)');
-      const response = await tokenCreationService.handleCreationIntent(message, context || {});
-      console.log('[BACKEND] Responding with:', response);
-      return res.json(ensurePromptResponse(response));
+    
+    // Ensure we have a response
+    if (!response) {
+      response = {
+        prompt: 'Sorry, I encountered an error processing your request. Please try again.',
+        action: 'error'
+      };
     }
-    if (swapSessionActive) {
-      console.log('[BACKEND] Routing to: swap (session active)');
-      const response = await tokenSwapService.handleSwapIntent(message, context || {});
-      console.log('[BACKEND] Responding with:', response);
-      return res.json(ensurePromptResponse(response));
-    }
-
-    // Otherwise, route to general chat
-    console.log('[BACKEND] Routing to: general chat');
-    const response = await chatService.chatWithDeepSeek(message, context);
-    console.log('[BACKEND] Responding with:', response);
-    res.json(ensurePromptResponse(response));
+    
+    console.log('[CHAT] Service response:', response);
+    
+    // Return response in the format the frontend expects
+    const finalResponse = {
+      ...response,
+      message: response.prompt || (response as any).message,
+      timestamp: new Date().toISOString(),
+      context: enhancedContext
+    };
+    
+    console.log('[CHAT] Final response:', finalResponse);
+    res.json(finalResponse);
+    
   } catch (error) {
-    res.status(500).json({ prompt: 'Chat service error', details: error?.toString() });
+    console.error('[CHAT] Error processing message:', error);
+    res.status(500).json({ 
+      error: 'Failed to process message',
+      message: 'Sorry, I encountered an error processing your request. Please try again.',
+      prompt: 'Sorry, I encountered an error processing your request. Please try again.',
+      action: 'error',
+      timestamp: new Date().toISOString()
+    });
   }
-});
+}));
 
-router.post('/token-creation', upload.single('file'), async (req: Request & { file?: Express.Multer.File }, res) => {
-  try {
-    const walletAddress = req.body.walletAddress;
-    if (!walletAddress) {
-      return res.status(400).json({ error: 'Wallet address is required' });
+// Token creation endpoint for handling image uploads and step flow
+router.post('/token-creation', upload.single('file'), asyncHandler(async (req, res) => {
+  console.log('[CHAT] /token-creation endpoint called');
+  console.log('[CHAT] File:', req.file ? 'File received' : 'No file');
+  console.log('[CHAT] Body:', req.body);
+  
+    const userId = req.body.userId;
+    if (!userId) {
+    return res.status(401).json({ error: 'User ID required' });
     }
+
     if (!req.file) {
-      return res.status(400).json({ error: 'Token image file is required' });
-    }
-    // Call the new image upload handler
-    const response = await tokenCreationService.handleImageUpload(req.file, { walletAddress });
-    res.json(response);
-  } catch (error) {
-    res.status(500).json({ error: 'Token creation image upload error', details: error?.toString() });
+    return res.status(400).json({ 
+      error: 'No file uploaded',
+      prompt: 'Please upload an image file for your token.',
+      step: 'image'
+    });
   }
-});
+
+  try {
+    const tokenCreationService = new TokenCreationService();
+    
+    // Use the specific image upload handler
+    const result = await tokenCreationService.handleImageUpload(req.file, { userId });
+    
+    console.log('[CHAT] Token creation result:', result);
+    res.json(result);
+    
+  } catch (error) {
+    console.error('[CHAT] Error in token creation:', error);
+    res.status(500).json({ 
+      error: 'Failed to process token creation',
+      prompt: 'Sorry, I encountered an error processing your image. Please try again.',
+      step: 'image'
+    });
+  }
+}));
+
+// Session management endpoints
+// Get all chat sessions for a user
+router.get('/sessions', authMiddleware, asyncHandler(async (req, res) => {
+  console.log('[CHAT] /sessions GET endpoint called');
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+
+  // For now, return empty sessions since we're not using database persistence
+  res.json({ sessions: [] });
+}));
+
+// Create a new chat session
+router.post('/sessions', authMiddleware, asyncHandler(async (req, res) => {
+  console.log('[CHAT] /sessions POST endpoint called');
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+
+  const { title } = req.body;
+  const session = {
+    id: `chat-${Date.now()}`,
+    title: title || 'New Chat',
+    messages: [],
+    createdAt: new Date().toISOString()
+  };
+
+  res.json({ session });
+}));
+
+// Get a specific chat session
+router.get('/sessions/:id', authMiddleware, asyncHandler(async (req, res) => {
+  console.log('[CHAT] /sessions/:id GET endpoint called');
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+
+  // For now, return empty session since we're not using database persistence
+  res.json({ session: null });
+}));
+
+// Update a chat session
+router.put('/sessions/:id', authMiddleware, asyncHandler(async (req, res) => {
+  console.log('[CHAT] /sessions/:id PUT endpoint called');
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+
+  const { messages, customTitle } = req.body;
+  const session = {
+    id: req.params.id,
+    title: customTitle || 'Updated Chat',
+    messages: messages || [],
+    updatedAt: new Date().toISOString()
+  };
+
+  res.json({ session });
+}));
+
+// Add a message to a chat session
+router.post('/sessions/:id/messages', authMiddleware, asyncHandler(async (req, res) => {
+  console.log('[CHAT] /sessions/:id/messages POST endpoint called');
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+
+  const { content, role, attachments, action } = req.body;
+  const message = {
+    id: `msg-${Date.now()}`,
+    content,
+    role,
+    attachments,
+    action,
+    createdAt: new Date().toISOString()
+  };
+
+  const session = {
+    id: req.params.id,
+    messages: [message],
+    updatedAt: new Date().toISOString()
+  };
+
+  res.json({ session });
+}));
+
+// Delete a chat session
+router.delete('/sessions/:id', authMiddleware, asyncHandler(async (req, res) => {
+  console.log('[CHAT] /sessions/:id DELETE endpoint called');
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+
+  res.json({ success: true });
+}));
 
 export default router; 

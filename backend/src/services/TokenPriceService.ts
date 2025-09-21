@@ -92,14 +92,18 @@ export class TokenPriceService {
     try {
       const tokenAddress = this.getTokenAddressFromQuery(query);
       if (!tokenAddress) {
-        return { prompt: "I couldn't identify the token you're asking about. Please specify a token symbol (like SOL, BONK) or provide a valid Solana token address." };
+        return { prompt: "I couldn't identify the token you're asking about. Please specify a token ticker (like SOL, BONK) or provide a valid contract address." };
       }
       const priceInfo = await this.getTokenPriceWithMetadata(tokenAddress);
       if (!priceInfo.usdPrice || priceInfo.nativePrice === null) {
         return { prompt: "Sorry, I couldn't get the price information for this token at the moment." };
       }
+      const usd = Number(priceInfo.usdPrice);
+      const sol = Number(priceInfo.nativePrice);
+      const usdDisplay = usd < 0.01 ? usd.toFixed(8) : usd.toFixed(4);
+      const solDisplay = sol < 0.01 ? sol.toFixed(8) : sol.toFixed(6);
       return {
-        prompt: `The current price of ${priceInfo.symbol} is $${Number(priceInfo.usdPrice).toFixed(4)} USD (${Number(priceInfo.nativePrice).toFixed(6)} SOL). View on Solscan: https://solscan.io/token/${priceInfo.mint}`
+        prompt: `The current price of ${priceInfo.symbol} is $${usdDisplay} USD (${solDisplay} SOL). [View on Solscan](https://solscan.io/token/${priceInfo.mint})`
       };
     } catch (error) {
       console.error('Error handling price query:', error);
@@ -113,6 +117,8 @@ export class TokenPriceService {
         network: this.network,
         address: mint
       });
+
+      console.log('Moralis response:', response); // Debug: log the full response
 
       if (response && response.raw) {
         const data = response.raw as MoralisSolanaTokenPrice;

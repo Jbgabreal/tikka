@@ -1,4 +1,6 @@
 import fetch from 'node-fetch';
+const { TokenPriceService } = require('./TokenPriceService');
+import { WalletService } from './WalletService';
 
 // In-memory session store (replace with Redis in production)
 export const swapSessions: Record<string, any> = {};
@@ -35,9 +37,9 @@ function validateSwapStepInput(step: string, input: any): string | null {
   switch (step) {
     case 'fromToken':
     case 'toToken':
-      if (!input || typeof input !== 'string' || input.length < 2) return 'Please provide a valid token symbol or mint address.';
+      if (!input || typeof input !== 'string' || input.length < 2) return 'Please provide a valid token contract address or ticker.';
       if (!isValidSolanaAddress(input) && !/^[A-Z0-9]{2,10}$/.test(input)) {
-        return 'Invalid token symbol or mint address format.';
+        return 'Invalid token contract address format or ticker. Please provide a valid contract address.';
       }
       return null;
     case 'amount':
@@ -64,26 +66,58 @@ function resolveTokenMint(input: string): string | null {
 export class TokenSwapService {
   // Multi-step chat flow for token swap
   async handleSwapIntent(message: string, context: any) {
-    const userId = context.walletAddress || 'default';
+    const userId = context.userId || context.walletAddress || 'default';
     const userInput = message.trim();
+    
     // Always handle cancel/abort first
     if (userInput.toLowerCase() === 'cancel' || userInput.toLowerCase() === 'abort') {
       delete swapSessions[userId];
       return { prompt: 'Swap cancelled.', step: null };
     }
+    
     // If the message is 'swap token', reset the session
     if (message.trim().toLowerCase() === 'swap token') {
       delete swapSessions[userId];
     }
+    
     let session = swapSessions[userId] || { step: null };
-    let { step } = session;
+    
+    // Use currentStep from context if available, otherwise use session step
+    let step = context.currentStep || session.step;
+    
+    // Update session with current step
+    session.step = step;
+    swapSessions[userId] = session;
+
+    // Interruption confirmation logic (moved up)
+    if (session.awaitingInterruptConfirm) {
+      if (userInput.trim().toLowerCase() === 'yes') {
+        delete swapSessions[userId];
+        return { prompt: 'Swap flow interrupted. Please initiate the process again.', step: null };
+      } else if (userInput.trim().toLowerCase() === 'no') {
+        session.awaitingInterruptConfirm = false;
+        swapSessions[userId] = session;
+        // Repeat the current step prompt
+        let prompt = '';
+        switch (session.step) {
+          case 'fromToken': prompt = 'Which token do you want to swap from? (contract address or ticker)'; break;
+          case 'toToken': prompt = 'Which token do you want to swap to? (contract address or ticker)'; break;
+          case 'amount': prompt = 'How much do you want to swap?'; break;
+          case 'confirmation': prompt = 'Type "proceed" to perform the swap or "cancel" to abort.'; break;
+          default: prompt = 'Please continue the swap process.'; break;
+        }
+        return { prompt, step: session.step };
+      } else {
+        return { prompt: 'Reply "yes" to confirm interruption and reset, or "no" to continue the swap process.', step: session.step };
+      }
+    }
 
     // If no step, this is the first call after reset: prompt for fromToken and do NOT advance
     if (!step) {
       step = 'fromToken';
       session.step = step;
       swapSessions[userId] = session;
-      return { prompt: 'Which token do you want to swap from? (symbol or mint address)', step };
+      return { prompt: 'Which token do you want to swap from? (contract address or ticker)', step };
     }
 
     // Handle back
@@ -112,8 +146,9 @@ export class TokenSwapService {
         session.validationErrorCount = (session.validationErrorCount || 0) + 1;
         swapSessions[userId] = session;
         if (session.validationErrorCount >= 3) {
-          delete swapSessions[userId];
-          return { prompt: 'Swap cancelled due to repeated invalid input. Please start again.', step: null };
+          session.awaitingInterruptConfirm = true;
+          session.validationErrorCount = 0;
+          return { prompt: 'It looks like you may want to interrupt the swap flow. Reply "yes" to confirm interruption and reset, or "no" to continue.', step: session.step };
         }
         return { prompt: validationError, step };
       }
@@ -129,8 +164,8 @@ export class TokenSwapService {
     if (nextStep && nextStep !== 'confirmation') {
       let prompt = '';
       switch (nextStep) {
-        case 'fromToken': prompt = 'Which token do you want to swap from? (symbol or mint address)'; break;
-        case 'toToken': prompt = 'Which token do you want to swap to? (symbol or mint address)'; break;
+        case 'fromToken': prompt = 'Which token do you want to swap from? (contract address or ticker)'; break;
+        case 'toToken': prompt = 'Which token do you want to swap to? (contract address or ticker)'; break;
         case 'amount': prompt = 'How much do you want to swap?'; break;
         default: prompt = 'Invalid step.'; break;
       }
@@ -143,13 +178,65 @@ export class TokenSwapService {
       if (!session.awaitingConfirmation) {
         session.awaitingConfirmation = true;
         swapSessions[userId] = session;
-        const summary = `🔄 **Swap Summary**\n` +
+        // --- USD Value Calculation ---
+        const priceService = new TokenPriceService();
+        let fromUsd = null, toUsd = null, fromSymbol = '', toSymbol = '', toAmount = null;
+        const EXCHANGE_FEE_RATE = 0.0192; // 1.92%
+        try {
+          if (session.fromToken && session.amount) {
+            const fromPrice = await priceService.getTokenPriceWithMetadata(session.fromToken);
+            fromUsd = fromPrice.usdPrice * session.amount;
+            fromSymbol = fromPrice.symbol || session.fromToken;
+            // Calculate fee
+            const feeUsd = fromUsd * EXCHANGE_FEE_RATE;
+            const fromUsdAfterFee = fromUsd - feeUsd;
+            if (session.toToken) {
+              const toPrice = await priceService.getTokenPriceWithMetadata(session.toToken);
+              toSymbol = toPrice.symbol || session.toToken;
+              // Calculate how much toToken the user will get for the USD value of fromToken after fee
+              if (toPrice.usdPrice > 0) {
+                toAmount = fromUsdAfterFee / toPrice.usdPrice;
+                toUsd = toAmount * toPrice.usdPrice; // Should be ≈ fromUsdAfterFee
+              } else {
+                toAmount = null;
+                toUsd = 0;
+              }
+            }
+          }
+        } catch (e) { /* ignore price errors */ }
+        const fromUsdDisplay = fromUsd !== null ? ` ($${fromUsd < 0.01 ? fromUsd.toFixed(8) : fromUsd.toFixed(4)} USD)` : '';
+        const toUsdDisplay = toUsd !== null ? ` ($${toUsd < 0.01 ? toUsd.toFixed(8) : toUsd.toFixed(4)} USD)` : '';
+        const toAmountDisplay = toAmount !== null ? `${toAmount < 0.01 ? toAmount.toFixed(8) : toAmount.toLocaleString(undefined, { maximumFractionDigits: 8 })}` : '-';
+        
+        // Get wallet and fee information
+        let walletInfo = null;
+        let fees = null;
+        try {
+          walletInfo = await WalletService.getUserDefaultWallet(userId);
+          if (walletInfo) {
+            fees = WalletService.calculateTransactionFees('token-swap', session.amount);
+          }
+        } catch (error) {
+          console.error('Error getting wallet info for swap confirmation:', error);
+        }
+
+        let summary = `🔄 **Swap Summary**\n` +
           `-----------------------------\n` +
-          `**From:** ${session.fromToken || '-'}\n` +
-          `**To:** ${session.toToken || '-'}\n` +
-          `**Amount:** ${session.amount || '-'}\n` +
-          `-----------------------------\n` +
-          `\nType 'proceed' to perform the swap or 'cancel' to abort.`;
+          `**From:** ${session.amount || '-'} ${fromSymbol}${fromUsdDisplay}\n` +
+          `**To:** ${toAmountDisplay} ${toSymbol}${toUsdDisplay}\n` +
+          `-----------------------------\n`;
+
+        // Add wallet and fee information if available
+        if (walletInfo && fees) {
+          summary += `\n💰 **Transaction Details:**\n` +
+            `Wallet: ${walletInfo.publicKey.slice(0, 8)}...${walletInfo.publicKey.slice(-8)}\n` +
+            `Balance: ${walletInfo.balance.toFixed(6)} SOL\n` +
+            `Network Fee: ${fees.networkFee.toFixed(6)} SOL\n` +
+            `Priority Fee: ${fees.priorityFee.toFixed(6)} SOL\n` +
+            `Total Cost: ${fees.estimatedCost.toFixed(6)} SOL\n`;
+        }
+
+        summary += `\nType 'proceed' to perform the swap or 'cancel' to abort.`;
         return {
           prompt: summary,
           step: 'confirmation',
@@ -183,14 +270,37 @@ export class TokenSwapService {
           delete swapSessions[userId];
           return { prompt: 'Only SOL <-> token swaps are supported at this time.', step: null };
         }
+        // Get user's default wallet
+        const walletInfo = await WalletService.getUserDefaultWallet(userId);
+        if (!walletInfo) {
+          delete swapSessions[userId];
+          return { prompt: 'No wallet found. Please create or import a wallet first.', step: null };
+        }
+
+        // Validate wallet has sufficient balance
+        const fees = WalletService.calculateTransactionFees('token-swap', amount);
+        const balanceCheck = await WalletService.hasSufficientBalance(
+          walletInfo.id, 
+          amount, 
+          fees
+        );
+
+        if (!balanceCheck.sufficient) {
+          delete swapSessions[userId];
+          return { 
+            prompt: `Insufficient balance. Need ${balanceCheck.required?.toFixed(6)} SOL, have ${balanceCheck.currentBalance.toFixed(6)} SOL. Please add ${balanceCheck.shortfall?.toFixed(6)} SOL to your wallet.`, 
+            step: null 
+          };
+        }
+
         const swapRequest = {
-          publicKey: context.walletAddress,
+          publicKey: walletInfo.publicKey,
           action,
           mint,
           denominatedInSol: denominatedInSol.toString(),
           amount,
           slippage: 0.5,
-          priorityFee: 0,
+          priorityFee: fees.priorityFee,
           pool: 'auto',
         };
         // Log the swap request payload for debugging
@@ -211,9 +321,39 @@ export class TokenSwapService {
             return { prompt: 'Swap failed', details: pumpJson.error, step: null };
           }
           delete swapSessions[userId];
+
+          // --- Swap Success Message Construction ---
+          // Resolve symbols
+          const fromTokenObj = POPULAR_TOKENS.find(t => t.mint === session.fromToken) || { symbol: session.fromToken };
+          const toTokenObj = POPULAR_TOKENS.find(t => t.mint === session.toToken) || { symbol: session.toToken };
+          const fromSymbol = fromTokenObj.symbol || session.fromToken;
+          const toSymbol = toTokenObj.symbol || session.toToken;
+          // Amount in SOL (if denominatedInSol)
+          const amountSol = denominatedInSol ? amount : undefined;
+          // Try to get USD equivalent (if possible)
+          let usdAmount = null;
+          try {
+            const priceService = new TokenPriceService();
+            if (denominatedInSol) {
+              const solPrice = await priceService.getTokenPrice(SOL_MINT);
+              usdAmount = solPrice.usdPrice * amount;
+            } else {
+              const fromPrice = await priceService.getTokenPrice(session.fromToken);
+              usdAmount = fromPrice.usdPrice * amount;
+            }
+          } catch (e) { usdAmount = null; }
+          // Solscan link (use tx if available, else token)
+          let solscanLink = '';
+          if (pumpJson.txid) {
+            solscanLink = `https://solscan.io/tx/${pumpJson.txid}`;
+          } else if (mint) {
+            solscanLink = `https://solscan.io/token/${mint}`;
+          }
+          const usdDisplay = usdAmount !== null ? ` (~$${usdAmount.toFixed(2)} USD)` : '';
+          const solDisplay = amountSol !== undefined ? `${amountSol} SOL` : `${amount} ${fromSymbol}`;
           return {
-            prompt: 'Swap transaction created. Please sign and submit.',
-            unsignedTx: pumpJson.unsignedTx,
+            prompt: 'Unsigned transaction generated. Please sign and submit with your wallet.',
+            unsignedTransaction: pumpJson.unsignedTx,
             swapDetails: swapRequest,
             requireSignature: true,
             step: null

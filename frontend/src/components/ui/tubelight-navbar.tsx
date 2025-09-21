@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useEffect, useState } from "react"
@@ -11,6 +10,9 @@ interface NavItem {
   name: string
   url: string
   icon: LucideIcon
+  external?: boolean
+  target?: string
+  rel?: string
 }
 
 interface NavBarProps {
@@ -27,17 +29,21 @@ export function NavBar({ items, className }: NavBarProps) {
   // Set active tab based on current location
   useEffect(() => {
     // Find matching item or default to first item
-    const currentPath = location.pathname
+    const currentPath = location.pathname;
+    // If on any /docs route, set Docs as active
+    if (currentPath.startsWith('/docs')) {
+      setActiveTab('Docs');
+      return;
+    }
     const matchingItem = items.find(item => {
       // For hash routes on homepage
-      if (item.url.startsWith('#') && currentPath === '/') {
-        return true
+      if (!item.external && item.url.startsWith('#') && currentPath === '/') {
+        return true;
       }
       // For other routes
-      return item.url === currentPath
-    })
-    
-    setActiveTab(matchingItem?.name || items[0].name)
+      return !item.external && item.url === currentPath;
+    });
+    setActiveTab(matchingItem?.name || items[0].name);
   }, [location, items])
 
   useEffect(() => {
@@ -51,6 +57,12 @@ export function NavBar({ items, className }: NavBarProps) {
   }, [])
 
   const handleNavClick = (item: NavItem, event: React.MouseEvent) => {
+    // For external links, let the browser handle the navigation
+    if (item.external) {
+      // Do not prevent default; let the browser handle target="_blank"
+      return;
+    }
+
     setActiveTab(item.name)
     
     // Handle navigation differently based on URL type
@@ -92,13 +104,17 @@ export function NavBar({ items, className }: NavBarProps) {
               key={item.name}
               href={item.url}
               onClick={(e) => handleNavClick(item, e)}
+              target={item.target}
+              rel={item.rel}
               className={cn(
                 "relative cursor-pointer text-sm font-semibold px-4 py-1.5 rounded-full transition-colors",
                 "text-foreground/80 hover:text-primary",
                 isActive && "bg-muted text-primary",
               )}
             >
-              <span className="hidden md:inline">{item.name}</span>
+              <span className="hidden md:inline flex items-center">
+                {item.name}
+              </span>
               <span className="md:hidden">
                 <Icon size={18} strokeWidth={2.5} />
               </span>

@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -19,6 +18,14 @@ export default {
 			}
 		},
 		extend: {
+			screens: {
+				'xs': '480px',
+			},
+			fontFamily: {
+				sans: ["Inter", "system-ui", "sans-serif"],
+				'display': ["Inter", "system-ui", "sans-serif"],
+				'body': ["Inter", "system-ui", "sans-serif"],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -63,12 +70,15 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				chatta: {
-					purple: '#9334ea',
-					cyan: '#36f0ff',
-					dark: '#13111C',
-					darker: '#0a090e',
-					gray: '#8E9196'
+				// BONK gradient colors - Heavy Orange Theme
+				'gradient': {
+					'orange': '#ff6b35',
+					'orange-light': '#ff8c42',
+					'orange-dark': '#ea580c',
+					'orange-darker': '#c2410c',
+					'start': '#0a0a0f',
+					'mid': '#1a0f1e',
+					'end': '#1e1620'
 				}
 			},
 			borderRadius: {
@@ -93,7 +103,7 @@ export default {
 					'0%, 100%': { opacity: '1' },
 					'50%': { opacity: '0.6' },
 				},
-				'gradient-flow': {
+				'gradient-shift': {
 					'0%': { backgroundPosition: '0% 50%' },
 					'50%': { backgroundPosition: '100% 50%' },
 					'100%': { backgroundPosition: '0% 50%' },
@@ -108,7 +118,7 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'float': 'float 6s ease-in-out infinite',
 				'pulse-glow': 'pulse-glow 3s ease-in-out infinite',
-				'gradient-flow': 'gradient-flow 6s ease infinite',
+				'gradient-shift': 'gradient-shift 3s ease infinite',
 				'fade-in': 'fade-in 0.6s ease-out',
 			}
 		}

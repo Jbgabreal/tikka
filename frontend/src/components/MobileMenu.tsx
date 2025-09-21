@@ -1,13 +1,14 @@
 import React from 'react';
-import { X } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import { X } from 'lucide-react';
 
 interface NavItem {
   name: string;
   url: string;
-  icon: React.ElementType;
+  icon?: any;
+  external?: boolean;
+  target?: string;
+  rel?: string;
 }
 
 interface MobileMenuProps {
@@ -22,92 +23,94 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, navItems }) =>
   
   if (!isOpen) return null;
   
-  const handleNavClick = (item: NavItem, event: React.MouseEvent) => {
-    event.preventDefault();
-    console.log(`Mobile menu: clicked item ${item.name}, url: ${item.url}`);
-    
-    // First close the menu
-    onClose();
-    
-    // For direct page navigation that's not hash-based
-    if (!item.url.startsWith('#')) {
-      console.log(`Mobile menu: direct navigation to ${item.url}`);
-      navigate(item.url);
-      return;
-    }
-    
-    // For hash navigation
-    // If we're not on homepage and trying to navigate to a section
-    if (location.pathname !== '/') {
-      console.log('Mobile menu: navigating to home first');
-      navigate('/');
-      // Allow the navigation to complete before scrolling
-      setTimeout(() => {
-        const element = document.querySelector(item.url);
-        if (element) {
-          console.log(`Mobile menu: scrolling to element ${item.url}`);
-          element.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 100);
-    } else {
-      // Direct scroll if already on homepage
-      console.log(`Mobile menu: already on homepage, scrolling to ${item.url}`);
+  const handleItemClick = (item: NavItem) => {
+    if (item.url.startsWith('#')) {
+      // Handle scroll to section
       const element = document.querySelector(item.url);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth' });
       }
+    } else {
+      // Handle navigation
+      navigate(item.url);
     }
+    onClose();
   };
   
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="fixed inset-0 z-50 pt-16 bg-black/90 backdrop-blur-xl"
-    >
-      <div className="container mx-auto px-4">
+    <div className="fixed inset-0 z-50 md:hidden">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      
+      {/* Menu Container */}
+              <div className="absolute right-0 top-0 h-full w-80 max-w-[85vw] glass-card border-l border-orange-500/20">
+        <div className="flex flex-col h-full">
+          {/* Header */}
+                      <div className="flex items-center justify-between p-6 border-b border-orange-500/20">
+            <h2 className="text-xl font-bold gradient-text">Menu</h2>
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+              className="p-2 text-gray-400 hover:text-white hover:bg-orange-500/10 rounded-xl transition-all duration-300 hover:scale-110"
+          aria-label="Close menu"
         >
           <X size={24} />
         </button>
-        
-        <nav className="flex flex-col items-center space-y-6 pt-8 animate-fade-in">
-          {navItems.map((item, i) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.url || 
-              (location.pathname === '/' && item.url.startsWith('#'));
-            
-            return (
-              <motion.div
+          </div>
+          
+          {/* Navigation Items */}
+          <nav className="flex-1 p-6">
+            <div className="space-y-4">
+              {navItems.map((item, index) => (
+                <button
                 key={item.name}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ 
-                  opacity: 1, 
-                  y: 0,
-                  transition: { delay: i * 0.1 }
-                }}
-              >
-                <a
-                  href={item.url}
-                  onClick={(e) => handleNavClick(item, e)}
-                  className={cn(
-                    "flex items-center justify-center gap-2 px-5 py-3 text-lg font-medium rounded-lg",
-                    "text-gray-300 hover:text-white hover:bg-chatta-purple/20 transition-colors",
-                    isActive && "text-white bg-chatta-purple/20"
-                  )}
+                  onClick={() => handleItemClick(item)}
+                  className="w-full flex items-center gap-4 p-4 text-left text-lg font-medium text-gray-300 hover:text-white hover:bg-orange-500/10 rounded-xl transition-all duration-300 hover:scale-105 group"
+                  style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  <Icon size={20} />
+                  {item.icon && (
+                    <item.icon 
+                      size={24} 
+                      className="text-orange-400 group-hover:text-orange-300 transition-colors duration-300"
+                    />
+                  )}
                   <span>{item.name}</span>
+                </button>
+              ))}
+            </div>
+          </nav>
+          
+          {/* Footer */}
+          <div className="p-6 border-t border-orange-500/20">
+            <div className="text-center">
+              <p className="text-sm text-gray-400 mb-4">
+                Powered by AI • Built on Solana
+              </p>
+              <div className="flex justify-center space-x-4">
+                <a 
+                  href="https://twitter.com/soltikka" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-orange-400 hover:text-orange-300 transition-colors duration-300"
+              >
+                  Twitter
                 </a>
-              </motion.div>
-            );
-          })}
-        </nav>
+                <a 
+                  href="https://docs.tikka.fun" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-orange-400 hover:text-orange-300 transition-colors duration-300"
+              >
+                  Docs
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

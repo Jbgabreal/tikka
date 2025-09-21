@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 
 const LiveChatPreview = () => {
@@ -43,10 +42,10 @@ const LiveChatPreview = () => {
             Live <span className="gradient-text">Chat Preview</span>
           </h2>
           <p className="text-gray-400 text-center max-w-xl mx-auto mb-12">
-            See how easy it is to interact with Chatta and perform complex blockchain operations with a few messages.
+            See how easy it is to interact with Tikka and perform complex blockchain operations with a few messages.
           </p>
 
-          <div className="glass-card rounded-2xl overflow-hidden shadow-xl border border-chatta-purple/30">
+          <div className="glass-card rounded-2xl overflow-hidden shadow-xl border border-orange-500/30">
             <div className="bg-gray-800 p-3 flex items-center">
               <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
               <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
@@ -58,7 +57,7 @@ const LiveChatPreview = () => {
               <div className="flex flex-col space-y-4">
                 {/* Initial user message */}
                 <div className="flex justify-end">
-                  <div className="bg-chatta-purple/30 rounded-2xl rounded-tr-none px-4 py-2 max-w-xs">
+                  <div className="bg-orange-500/30 rounded-2xl rounded-tr-none px-4 py-2 max-w-xs">
                     <p className="text-white">{currentChat.user}</p>
                   </div>
                 </div>
@@ -69,7 +68,7 @@ const LiveChatPreview = () => {
                     <div className="bg-gray-800 rounded-2xl rounded-tl-none px-4 py-2 max-w-xs">
                       <div className="flex items-center mb-1">
                         <div className="w-2 h-2 bg-chatta-cyan rounded-full mr-2"></div>
-                        <p className="text-xs text-chatta-cyan">Chatta</p>
+                        <p className="text-xs text-chatta-cyan">Tikka</p>
                       </div>
                       <p className="text-white">{currentChat.bot}</p>
                     </div>
@@ -79,7 +78,7 @@ const LiveChatPreview = () => {
                 {/* Second user message */}
                 {currentChat.user2 && (
                   <div className="flex justify-end animate-fade-in">
-                    <div className="bg-chatta-purple/30 rounded-2xl rounded-tr-none px-4 py-2 max-w-xs">
+                    <div className="bg-orange-500/30 rounded-2xl rounded-tr-none px-4 py-2 max-w-xs">
                       <p className="text-white">{currentChat.user2}</p>
                     </div>
                   </div>
@@ -91,7 +90,7 @@ const LiveChatPreview = () => {
                     <div className="bg-gray-800 rounded-2xl rounded-tl-none px-4 py-2 max-w-xs">
                       <div className="flex items-center mb-1">
                         <div className="w-2 h-2 bg-chatta-cyan rounded-full mr-2"></div>
-                        <p className="text-xs text-chatta-cyan">Chatta</p>
+                        <p className="text-xs text-chatta-cyan">Tikka</p>
                       </div>
                       <p className="text-white">{currentChat.bot2}</p>
                       {currentChat.bot2.includes("done!") && (
@@ -111,10 +110,10 @@ const LiveChatPreview = () => {
             <div className="p-4 border-t border-gray-800 flex">
               <input 
                 type="text" 
-                placeholder="Ask Chatta anything..." 
-                className="flex-1 bg-gray-800 text-white p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-chatta-purple"
+                placeholder="Ask Tikka anything..." 
+                className="flex-1 bg-gray-800 text-white p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
-              <button className="ml-2 bg-chatta-purple text-white px-4 py-2 rounded-lg hover:bg-opacity-90">
+              <button className="ml-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-opacity-90">
                 Send
               </button>
             </div>

@@ -39,7 +39,7 @@ async function testServices() {
       fromToken: "So11111111111111111111111111111111111111112", // SOL
       toToken: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // USDC
       amount: 1,
-      slippage: 0.5
+      slippage: 1
     });
     console.log('Token Swap Response:', JSON.stringify(swapResponse, null, 2), '\n');
 
