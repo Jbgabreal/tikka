@@ -191,6 +191,139 @@ export class ChatService {
     return createKeywords.some(keyword => lowerMessage.includes(keyword));
   }
 
+  private isGeneralTradingQuestion(message: string): boolean {
+    const tradingKeywords = [
+      'should i buy',
+      'should i sell',
+      'is it a good time',
+      'what do you think about',
+      'analysis of',
+      'opinion on',
+      'advice on',
+      'recommend',
+      'suggest',
+      'best tokens',
+      'good investment',
+      'bad investment',
+      'risky',
+      'safe',
+      'market outlook',
+      'price prediction',
+      'when to buy',
+      'when to sell',
+      'hodl',
+      'diamond hands',
+      'paper hands',
+      'fomo',
+      'fud',
+      'bullish',
+      'bearish',
+      'pump',
+      'dump',
+      'moon',
+      'rug pull',
+      'scam',
+      'legit',
+      'trustworthy',
+      'reliable'
+    ];
+
+    const lowerMessage = message.toLowerCase();
+    return tradingKeywords.some(keyword => lowerMessage.includes(keyword));
+  }
+
+  private isMarketAnalysisQuestion(message: string): boolean {
+    const analysisKeywords = [
+      'market analysis',
+      'technical analysis',
+      'fundamental analysis',
+      'tokenomics',
+      'utility',
+      'use case',
+      'adoption',
+      'partnerships',
+      'team',
+      'roadmap',
+      'whitepaper',
+      'audit',
+      'security',
+      'liquidity',
+      'volume',
+      'market cap',
+      'circulating supply',
+      'total supply',
+      'burn',
+      'mint',
+      'inflation',
+      'deflation',
+      'staking',
+      'governance',
+      'voting',
+      'dao',
+      'defi',
+      'yield farming',
+      'liquidity mining',
+      'apy',
+      'apr'
+    ];
+
+    const lowerMessage = message.toLowerCase();
+    return analysisKeywords.some(keyword => lowerMessage.includes(keyword));
+  }
+
+  private isGeneralChat(message: string): boolean {
+    const generalKeywords = [
+      'hello',
+      'hi',
+      'hey',
+      'how are you',
+      'what\'s up',
+      'how\'s it going',
+      'thanks',
+      'thank you',
+      'help',
+      'explain',
+      'what is',
+      'how does',
+      'why',
+      'when',
+      'where',
+      'tell me about',
+      'i want to know',
+      'i don\'t understand',
+      'can you help',
+      'i need help',
+      'confused',
+      'new to',
+      'beginner',
+      'learning',
+      'teach me',
+      'guide me'
+    ];
+
+    const lowerMessage = message.toLowerCase();
+    return generalKeywords.some(keyword => lowerMessage.includes(keyword));
+  }
+
+  private async getMarketContext(): Promise<string> {
+    try {
+      // Get trending tokens for market context
+      const trendingTokens = await this.trendingService.getTrending(5);
+      let context = '';
+      
+      if (trendingTokens && trendingTokens.length > 0) {
+        context += '📊 **Current Market Context:**\n';
+        context += `- Top trending: ${trendingTokens.slice(0, 3).map((t: any) => t.symbol || 'Unknown').join(', ')}\n`;
+        context += `- Market activity: High volume and interest in trending tokens\n\n`;
+      }
+      
+      return context;
+    } catch (error) {
+      console.error('Error getting market context:', error);
+      return '';
+    }
+  }
+
   private formatTrendingTokens(tokens: any[]): string {
     if (!tokens || tokens.length === 0) {
       return 'No trending tokens found at the moment.';
@@ -375,15 +508,21 @@ export class ChatService {
       const content = completion.choices?.[0]?.message?.content || 'No response from assistant.';
       return { prompt: content };
     }
-    // If the message is unrelated to Solana/SPL/DeFi, redirect politely (only if no custom system prompt)
-    const solanaKeywords = ['solana', 'spl', 'defi', 'token', 'coin', 'protocol', 'wallet', 'nft', 'jupiter', 'pump.fun', 'magic eden', 'dex', 'solscan', 'blockchain', 'crypto'];
+    // Enhanced intent detection for smarter responses
+    const solanaKeywords = ['solana', 'spl', 'defi', 'token', 'coin', 'protocol', 'wallet', 'nft', 'jupiter', 'pump.fun', 'magic eden', 'dex', 'solscan', 'blockchain', 'crypto', 'trading', 'investment', 'market', 'price', 'analysis'];
     const lowerMessage = message.toLowerCase();
     const isSolanaRelated = solanaKeywords.some(keyword => lowerMessage.includes(keyword));
-    if (!isSolanaRelated) {
-      return { prompt: "I'm here to help with Solana and SPL token questions. Ask me anything about Solana DeFi!" };
+    
+    // Check for specific types of questions that need enhanced responses
+    const isTradingQuestion = this.isGeneralTradingQuestion(message);
+    const isAnalysisQuestion = this.isMarketAnalysisQuestion(message);
+    const isGeneralChatQuestion = this.isGeneralChat(message);
+    
+    if (!isSolanaRelated && !isTradingQuestion && !isAnalysisQuestion && !isGeneralChatQuestion) {
+      return { prompt: "I'm here to help with Solana and SPL token questions. Ask me anything about Solana DeFi, trading, or token analysis!" };
     }
-    // Otherwise, always answer in the context of Solana/SPL/DeFi
-    console.log('[chatWithOpenAI] Routing to: general chat (OpenAI, Solana context)');
+    // Otherwise, always answer in the context of Solana/SPL/DeFi with enhanced intelligence
+    console.log('[chatWithOpenAI] Routing to: enhanced general chat (OpenAI, Solana context)');
     
     if (!openai) {
       return { 
@@ -391,17 +530,81 @@ export class ChatService {
       };
     }
     
-    const systemPrompt = `You are Soltikka, an expert Solana DeFi chatbot. You only answer questions about the Solana blockchain, SPL tokens, Solana DeFi, and the Solana ecosystem (WCO = whole crypto ecosystem on Solana). If a user asks a general or ambiguous question (such as 'what is trending' or 'what's new'), always assume they are referring to the Solana ecosystem and respond with information relevant to Solana tokens, protocols, news, or trends. If a question is completely unrelated to Solana, politely redirect the user to ask about Solana or SPL tokens. Never answer questions outside the Solana/SPL/DeFi domain. Always interpret general questions as Solana-related. All your answers must be strictly about Solana, SPL tokens, Solana DeFi, or the Solana ecosystem (WCO).`;
+    // Enhanced system prompt for intelligent Solana trading advice and analysis
+    let systemPrompt = `You are Soltikka, an expert Solana DeFi trading assistant and blockchain analyst. You are highly knowledgeable about:
+
+🔹 **Solana Ecosystem**: All major protocols, DEXs, and projects
+🔹 **Trading & Analysis**: Technical analysis, market trends, risk assessment
+🔹 **Token Research**: Due diligence, tokenomics, team analysis
+🔹 **DeFi Strategies**: Yield farming, liquidity provision, arbitrage
+🔹 **Market Intelligence**: Real-time insights, news impact, sentiment analysis
+
+**Your Capabilities:**
+- Provide detailed trading advice and market analysis
+- Analyze token fundamentals and technical indicators
+- Suggest investment strategies based on market conditions
+- Explain complex DeFi concepts in simple terms
+- Recommend tokens based on risk tolerance and goals
+- Provide real-time market insights and trends
+- Help with portfolio diversification strategies
+
+**Response Style:**
+- Be conversational and engaging
+- Use emojis and formatting for clarity
+- Provide actionable insights, not just information
+- Include risk warnings when appropriate
+- Reference specific protocols, tokens, and metrics
+- Be honest about market uncertainties
+
+**Always focus on Solana ecosystem** but provide comprehensive, intelligent analysis that helps users make informed decisions. If asked about general crypto concepts, relate them to Solana's implementation and advantages.`;
+
+    // Add context-specific instructions based on the type of question
+    if (isTradingQuestion) {
+      systemPrompt += `\n\n**TRADING ADVICE MODE**: The user is asking for trading advice. Provide detailed analysis including:
+- Current market conditions and sentiment
+- Risk assessment and potential outcomes
+- Specific entry/exit strategies if applicable
+- Market timing considerations
+- Risk management recommendations
+- Always include appropriate disclaimers about market risks`;
+    }
+    
+    if (isAnalysisQuestion) {
+      systemPrompt += `\n\n**ANALYSIS MODE**: The user wants detailed analysis. Provide comprehensive insights including:
+- Technical analysis with specific indicators
+- Fundamental analysis of tokenomics and utility
+- Market positioning and competitive advantages
+- Risk factors and potential red flags
+- Long-term viability assessment
+- Specific metrics and data points`;
+    }
+    
+    if (isGeneralChatQuestion) {
+      systemPrompt += `\n\n**CONVERSATIONAL MODE**: The user is having a general conversation. Be friendly and helpful while:
+- Maintaining focus on Solana and DeFi topics
+- Providing educational content when appropriate
+- Being encouraging for beginners
+- Offering to help with specific questions
+- Sharing interesting Solana ecosystem insights`;
+    }
+    
+    // Get market context for enhanced responses
+    const marketContext = await this.getMarketContext();
+    const enhancedMessage = marketContext + message;
+    
     const messages = [
       { role: 'system', content: systemPrompt },
       ...(context.messages || [])
         .filter((m: any) => typeof m.content === 'string')
         .map((m: any) => ({ role: m.role, content: m.content })),
-      { role: 'user', content: message }
+      { role: 'user', content: enhancedMessage }
     ];
+    
     const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4', // Using GPT-4 for better analysis capabilities
       messages,
+      temperature: 0.7, // Slightly creative but focused
+      max_tokens: 1000, // Allow for detailed responses
     });
     const content = completion.choices?.[0]?.message?.content || 'No response from assistant.';
     return { prompt: content };

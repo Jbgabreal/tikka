@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "main": "dist/index.js",
     "scripts": {
-        "dev": "nodemon src/index.ts",
+        "dev": "nodemon --exec ts-node src/index.ts",
         "dev:doppler": "doppler run -- npm run dev",
         "build": "tsc",
         "start": "node dist/index.js"
